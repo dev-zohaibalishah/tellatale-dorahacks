@@ -19,6 +19,19 @@ const linkHost = process.env.EXPO_PUBLIC_LINK_HOST?.trim();
 const BUNDLE_ID = 'xyz.tellatale.app';
 const INK = '#10141C';
 
+/**
+ * The EAS project this app builds under.
+ *
+ * `eas init` normally writes this itself, but it can only edit a static app.json —
+ * against a dynamic config it prints the id and expects you to add it by hand, which
+ * is what this is.
+ *
+ * If EAS reports a slug mismatch, the project behind this id is named something other
+ * than `tellatale`. Rename it in the Expo dashboard (Project settings -> Name) rather
+ * than renaming the app to match; the slug ends up in build URLs and update channels.
+ */
+const EAS_PROJECT_ID = '9518139d-e38c-4731-9ac3-3dd61518d77a';
+
 const config: ExpoConfig = {
   name: 'TellaTale',
   slug: 'tellatale',
@@ -117,6 +130,24 @@ const config: ExpoConfig = {
 
   experiments: {
     typedRoutes: true,
+  },
+
+  extra: {
+    eas: { projectId: EAS_PROJECT_ID },
+  },
+
+  // Over-the-air updates. Worth having on a hackathon build specifically: a copy fix
+  // or a layout correction ships to an already-installed APK without a rebuild or a
+  // reinstall, which is the difference between fixing something the night before and
+  // not fixing it.
+  updates: {
+    url: `https://u.expo.dev/${EAS_PROJECT_ID}`,
+  },
+  runtimeVersion: {
+    // Tie updates to the native layer: an OTA update is only served to a build whose
+    // compiled modules match. Without this, a JS bundle expecting a native module the
+    // installed app does not have would crash on launch.
+    policy: 'appVersion',
   },
 };
 
