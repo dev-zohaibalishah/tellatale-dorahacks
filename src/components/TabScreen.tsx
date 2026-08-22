@@ -39,7 +39,7 @@ export function TabScreen({
   function go(key: TabKey) {
     if (key === active) return;
     router.replace(
-      key === 'home' ? '/' : key === 'explore' ? '/explore' : key === 'family' ? '/family' : '/me'
+      key === 'home' ? '/' : key === 'explore' ? '/explore' : key === 'people' ? '/people' : '/me'
     );
   }
 
@@ -56,7 +56,7 @@ export function TabScreen({
         <View style={[styles.content, styles.root, padding, contentStyle]}>{children}</View>
       )}
 
-      <TabBar active={active} onSelect={go} onAdd={() => router.push('/create')} />
+      <TabBar active={active} onSelect={go} onAdd={() => router.push('/add')} />
     </View>
   );
 }

@@ -30,6 +30,8 @@ export interface CreateMemoryInput {
   originalRemark: string;
   dateHint: string | null;
   locationHint: string | null;
+  /** Whose memory this is, when the owner is only holding the phone. */
+  creditedTo?: string | null;
   /** MVP spec privacy rule: the uploader confirms they may share this image. */
   permissionConfirmed: true;
 }

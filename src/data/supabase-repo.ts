@@ -49,6 +49,7 @@ function toMemory(r: Row): Memory {
     originalRemark: r.original_remark,
     dateHint: r.date_hint,
     locationHint: r.location_hint,
+    creditedTo: r.credited_to ?? null,
     visibility: r.visibility,
     inviteToken: r.invite_token,
     contributorCount: r.contributor_count,
@@ -197,6 +198,7 @@ export function createSupabaseRepository(): Repository {
           original_remark: input.originalRemark,
           date_hint: input.dateHint,
           location_hint: input.locationHint,
+          credited_to: input.creditedTo ?? null,
           invite_token: randomToken(),
         })
         .select()

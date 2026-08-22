@@ -19,7 +19,7 @@ import * as haptics from '../lib/haptics';
 import { useTheme } from '../state/theme';
 import { elevation, layout, radius, space } from '../theme/tokens';
 
-export type TabKey = 'home' | 'explore' | 'family' | 'me';
+export type TabKey = 'home' | 'explore' | 'people' | 'me';
 
 interface Tab {
   key: TabKey;
@@ -30,7 +30,7 @@ interface Tab {
 const TABS: Tab[] = [
   { key: 'home', label: 'Home', icon: 'home' },
   { key: 'explore', label: 'Explore', icon: 'compass' },
-  { key: 'family', label: 'Family', icon: 'people' },
+  { key: 'people', label: 'People', icon: 'people' },
   { key: 'me', label: 'Me', icon: 'user' },
 ];
 

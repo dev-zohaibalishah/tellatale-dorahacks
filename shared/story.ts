@@ -101,6 +101,8 @@ export const Memory = z.object({
   originalRemark: z.string().min(1).max(2000),
   dateHint: z.string().max(80).nullable(),
   locationHint: z.string().max(120).nullable(),
+  /** Whose memory this is, when that is not the owner. Null = the owner is telling it. */
+  creditedTo: z.string().max(60).nullable().default(null),
   visibility: Visibility,
   /** Opaque invite token. Present on the doc but withheld from guest reads. */
   inviteToken: z.string(),

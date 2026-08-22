@@ -114,7 +114,7 @@ export default function Me() {
               title={m.title}
               note={m.note}
               accent={m.done}
-              onPress={() => router.push(m.done ? '/explore' : '/create')}
+              onPress={() => router.push(m.done ? '/explore' : '/add')}
             />
           ))}
         </View>

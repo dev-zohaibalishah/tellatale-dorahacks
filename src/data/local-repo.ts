@@ -131,6 +131,7 @@ export function createLocalRepository(): Repository {
         originalRemark: input.originalRemark,
         dateHint: input.dateHint,
         locationHint: input.locationHint,
+        creditedTo: input.creditedTo ?? null,
         visibility: 'private',
         inviteToken: randomToken(),
         contributorCount: 0,

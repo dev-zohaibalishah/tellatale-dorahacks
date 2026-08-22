@@ -1,5 +1,5 @@
 /**
- * Family — two tabs, and the split is the point.
+ * People — two tabs, and the split is the point.
  *
  *   People We Tag — everyone who appears in the photos, whether or not they use the
  *                   app. Nani does not need an account to be the most-photographed
@@ -30,7 +30,7 @@ import { radius, space } from '../src/theme/tokens';
 
 type Tab = 'tagged' | 'inApp';
 
-export default function Family() {
+export default function People() {
   const { uid, displayName, username } = useSession();
   const { data: memories, loading } = useMemories(uid);
   const { c } = useTheme();
@@ -42,10 +42,10 @@ export default function Family() {
   );
 
   return (
-    <TabScreen active="family">
+    <TabScreen active="people">
       <View style={styles.head}>
-        <Text variant="title">Family</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Search family" hitSlop={8}>
+        <Text variant="title">People</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Search people" hitSlop={8}>
           <View style={[styles.searchDot, { backgroundColor: c.surfaceRaised }]}>
             <Icon name="search" size={17} color={c.text} />
           </View>

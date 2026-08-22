@@ -71,7 +71,7 @@ export default function Home() {
   function selectTab(next: TabKey) {
     if (next === 'home') return;
     setTab('home');
-    router.push(next === 'explore' ? '/explore' : next === 'family' ? '/family' : '/me');
+    router.push(next === 'explore' ? '/explore' : next === 'people' ? '/people' : '/me');
   }
 
   const totalContributors = useMemo(
@@ -126,7 +126,7 @@ export default function Home() {
           <Text variant="title">What will you remember today?</Text>
         </View>
 
-        <ComposeBar onPress={() => router.push('/create')} />
+        <ComposeBar onPress={() => router.push('/add')} />
 
         {/* --------------------------------------------------- things to do */}
         <View style={styles.section}>
@@ -142,7 +142,7 @@ export default function Home() {
               dot={false}
               onPress={() => router.push('/notifications')}
             />
-            <TodoChip icon="tag" label="Tag faces" onPress={() => router.push('/family')} />
+            <TodoChip icon="tag" label="Tag faces" onPress={() => router.push('/people')} />
             <TodoChip icon="sparkle" label="Flashbacks" onPress={() => router.push('/explore')} />
           </ScrollView>
         </View>
@@ -169,7 +169,7 @@ export default function Home() {
             <EmptyState
               line="Nothing here yet. A memory starts with one photo and what you remember about it — the people who were there fill in the rest."
               action={
-                <Button label="Add a memory" onPress={() => router.push('/create')} />
+                <Button label="Add a memory" onPress={() => router.push('/add')} />
               }
             />
           ) : (
@@ -195,7 +195,7 @@ export default function Home() {
       <TabBar
         active={tab}
         onSelect={selectTab}
-        onAdd={() => router.push('/create')}
+        onAdd={() => router.push('/add')}
       />
     </View>
   );
