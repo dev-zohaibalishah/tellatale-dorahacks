@@ -149,7 +149,7 @@ export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
             <Section label="What is not settled">
               {story.uncertainties.map((u, i) => (
                 <Row key={i} style={styles.bullet}>
-                  <View style={[styles.dot, { backgroundColor: c.signal }]} />
+                  <View style={[styles.dot, { backgroundColor: c.accent }]} />
                   <Text variant="body" tone="muted" style={styles.bulletText}>
                     {u}
                   </Text>
@@ -180,13 +180,13 @@ export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
             {story.aiAssisted ? <SourceChip source={{ kind: 'aiAssisted' }} /> : null}
             {edited ? (
               <View style={[styles.editedChip, { borderColor: c.hairline }]}>
-                <Text variant="metaLabel" tone="muted">
+                <Text variant="eyebrow" tone="muted">
                   Owner edited
                 </Text>
               </View>
             ) : null}
           </Row>
-          <Text variant="metaLabel" tone="muted">
+          <Text variant="eyebrow" tone="muted">
             {contributorCount === 1
               ? '1 contributor'
               : `${contributorCount} contributors`}
@@ -200,7 +200,7 @@ export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text variant="metaLabel" tone="muted">
+      <Text variant="eyebrow" tone="muted">
         {label}
       </Text>
       {children}

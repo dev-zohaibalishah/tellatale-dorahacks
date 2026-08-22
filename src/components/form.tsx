@@ -63,7 +63,7 @@ export function Field({
             padding: space.md,
             minHeight: multiline ? 120 : layout.minTouchTarget,
             textAlignVertical: multiline ? 'top' : 'center',
-            fontFamily: narrative ? fonts.serif : fonts.ui,
+            fontFamily: narrative ? fonts.regular : fonts.regular,
           },
         ]}
       />
@@ -116,7 +116,7 @@ export function ChoiceRow<T extends string>({
               style={[
                 styles.chip,
                 {
-                  borderColor: active ? c.signal : c.hairline,
+                  borderColor: active ? c.accent : c.hairline,
                   backgroundColor: active ? c.surfaceRaised : 'transparent',
                 },
               ]}
@@ -166,8 +166,8 @@ export function CheckRow({
       <View
         style={[
           styles.box,
-          { borderColor: checked ? c.signal : c.hairline },
-          checked && { backgroundColor: c.signal },
+          { borderColor: checked ? c.accent : c.hairline },
+          checked && { backgroundColor: c.accent },
         ]}
       />
       <Text variant="ui" tone="muted" style={{ flex: 1 }}>

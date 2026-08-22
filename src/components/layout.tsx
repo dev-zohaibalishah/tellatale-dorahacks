@@ -123,7 +123,7 @@ export function EmptyState({
 /** Mono eyebrow — the archive's voice, never the person's. */
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <Text variant="metaLabel" tone="muted">
+    <Text variant="eyebrow" tone="muted">
       {children}
     </Text>
   );

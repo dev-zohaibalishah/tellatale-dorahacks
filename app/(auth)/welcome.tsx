@@ -83,7 +83,7 @@ export default function Welcome() {
         <ActionBar>
           <Button
             label={last ? 'Create an account' : 'Next'}
-            variant="contribute"
+            variant="accent"
             full
             onPress={() => (last ? finish() : setIndex((i) => i + 1))}
           />
@@ -101,7 +101,7 @@ export default function Welcome() {
       }
     >
       <View style={styles.top}>
-        <Text variant="metaLabel" tone="muted">
+        <Text variant="eyebrow" tone="muted">
           TellaTale
         </Text>
       </View>
@@ -110,13 +110,13 @@ export default function Welcome() {
           stock family photo: the brief bars depicting real people. */}
       <View style={[styles.plate, { borderColor: c.hairline }]}>
         <View style={[styles.plateInner, { backgroundColor: c.surfaceRaised }]} />
-        <View style={[styles.plateStamp, { backgroundColor: c.datestamp }]} />
+        <View style={[styles.plateStamp, { backgroundColor: c.accent }]} />
       </View>
 
       <Animated.View
         style={[styles.panel, { opacity: fade, transform: [{ translateY: lift }] }]}
       >
-        <Text variant="metaLabel" tone="muted">
+        <Text variant="eyebrow" tone="muted">
           {panel.eyebrow}
         </Text>
         <Text variant="display">{panel.title}</Text>

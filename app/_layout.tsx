@@ -1,11 +1,14 @@
 import {
-  Newsreader_400Regular,
-  Newsreader_400Regular_Italic,
-  Newsreader_500Medium,
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_600SemiBold,
   useFonts,
-} from '@expo-google-fonts/newsreader';
-import { InterTight_500Medium, InterTight_600SemiBold } from '@expo-google-fonts/inter-tight';
-import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono';
+} from '@expo-google-fonts/playfair-display';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -87,6 +90,10 @@ function Shell() {
         <Stack.Screen name="(auth)/welcome" options={{ animation: 'fade' }} />
         <Stack.Screen name="(auth)/sign-in" options={{ animation: 'fade' }} />
         <Stack.Screen name="(auth)/sign-up" options={{ animation: 'fade' }} />
+        <Stack.Screen name="explore" options={{ animation: 'none' }} />
+        <Stack.Screen name="family" options={{ animation: 'none' }} />
+        <Stack.Screen name="me" options={{ animation: 'none' }} />
+        <Stack.Screen name="notifications" />
         <Stack.Screen name="create" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="collection/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="memory/[id]/index" />
@@ -101,12 +108,12 @@ function Shell() {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Newsreader_400Regular,
-    Newsreader_400Regular_Italic,
-    Newsreader_500Medium,
-    InterTight_500Medium,
-    InterTight_600SemiBold,
-    JetBrainsMono_400Regular,
+    PlayfairDisplay_400Regular,
+    PlayfairDisplay_600SemiBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
   // Render nothing rather than a half-typeset frame; a font swap mid-read is worse

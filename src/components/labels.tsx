@@ -30,7 +30,7 @@ export function SourceChip({ source }: { source: SourceLabel }) {
         },
       ]}
     >
-      <Text variant="metaLabel" tone="muted">
+      <Text variant="eyebrow" tone="muted">
         {sourceLabelText(source)}
       </Text>
     </View>
@@ -50,12 +50,12 @@ export function CertaintyChip({ certainty }: { certainty: Certainty }) {
       style={[
         styles.chip,
         {
-          borderColor: emphasised ? c.signal : c.hairline,
+          borderColor: emphasised ? c.accent : c.hairline,
           backgroundColor: 'transparent',
         },
       ]}
     >
-      <Text variant="metaLabel" tone={emphasised ? 'signal' : 'muted'}>
+      <Text variant="eyebrow" tone={emphasised ? 'accent' : 'muted'}>
         {certaintyLabel[certainty]}
       </Text>
     </View>
@@ -74,7 +74,7 @@ export function AttributionLine({
 }) {
   const parts = [name, relationship, at ? relativeTime(at) : null].filter(Boolean);
   return (
-    <Text variant="metaLabel" tone="muted">
+    <Text variant="eyebrow" tone="muted">
       {parts.join(' · ')}
     </Text>
   );

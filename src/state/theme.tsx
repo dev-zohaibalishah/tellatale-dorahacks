@@ -15,10 +15,12 @@ const Ctx = createContext<ThemeCtx | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
-  const [preference, setPreference] = useState<ThemeName | 'system'>('system');
+  // The Figma is light-only, so light is the default rather than following the OS.
+  // Dark stays available behind the toggle in Me for anyone who wants it.
+  const [preference, setPreference] = useState<ThemeName | 'system'>('light');
 
   const name: ThemeName =
-    preference === 'system' ? (system === 'light' ? 'light' : 'dark') : preference;
+    preference === 'system' ? (system === 'dark' ? 'dark' : 'light') : preference;
 
   const value = useMemo<ThemeCtx>(
     () => ({

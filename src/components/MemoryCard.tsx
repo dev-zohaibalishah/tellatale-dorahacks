@@ -53,7 +53,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
         </View>
 
         <View style={styles.body}>
-          {meta ? <Text variant="metaLabel" tone="muted">{meta}</Text> : null}
+          {meta ? <Text variant="eyebrow" tone="muted">{meta}</Text> : null}
           <Text variant="title" numberOfLines={2}>
             {memory.title}
           </Text>
@@ -62,7 +62,7 @@ export function MemoryCard({ memory }: { memory: Memory }) {
               {contributors}
             </Text>
             {memory.storyApprovedAt ? (
-              <Text variant="metaLabel" tone="muted">
+              <Text variant="eyebrow" tone="muted">
                 {memory.visibility === 'public' ? 'Published' : 'Approved'}
               </Text>
             ) : null}

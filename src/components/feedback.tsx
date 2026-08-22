@@ -63,7 +63,7 @@ function Toast({ state }: { state: ToastState | null }) {
   if (!state) return null;
 
   const border =
-    state.tone === 'bad' ? c.warn : state.tone === 'good' ? c.signal : c.hairline;
+    state.tone === 'bad' ? c.warn : state.tone === 'good' ? c.accent : c.hairline;
 
   return (
     <Animated.View
@@ -181,13 +181,13 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
                 <View style={styles.actions}>
                   <Button
                     label={o?.cancelLabel ?? 'Cancel'}
-                    variant="secondary"
+                    variant="outline"
                     onPress={() => settle(false)}
                     style={styles.action}
                   />
                   <Button
                     label={o?.confirmLabel ?? 'Confirm'}
-                    variant={o?.destructive ? 'destructive' : 'primary'}
+                    variant={o?.destructive ? 'destructive' : 'outline'}
                     onPress={() => settle(true)}
                     style={styles.action}
                   />

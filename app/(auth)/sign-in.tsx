@@ -63,7 +63,7 @@ export default function SignIn() {
         <ActionBar>
           <Button
             label="Sign in"
-            variant="contribute"
+            variant="accent"
             full
             loading={busy}
             disabled={!canSubmit}
@@ -74,7 +74,7 @@ export default function SignIn() {
               New here?
             </Text>
             <Link href="/(auth)/sign-up" replace>
-              <Text variant="meta" tone="signal">
+              <Text variant="meta" tone="accent">
                 Create an account
               </Text>
             </Link>
@@ -83,7 +83,7 @@ export default function SignIn() {
       }
     >
       <View style={styles.brand}>
-        <Text variant="metaLabel" tone="muted">
+        <Text variant="eyebrow" tone="muted">
           TellaTale
         </Text>
         <Text variant="display">Welcome back</Text>

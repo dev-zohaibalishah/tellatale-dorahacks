@@ -39,7 +39,20 @@ export type IconName =
   | 'signOut'
   | 'search'
   | 'folder'
-  | 'inbox';
+  | 'inbox'
+  | 'home'
+  | 'compass'
+  | 'people'
+  | 'bell'
+  | 'heart'
+  | 'comment'
+  | 'tag'
+  | 'sparkle'
+  | 'mic'
+  | 'keyboard'
+  | 'calendar'
+  | 'pin'
+  | 'chevronRight';
 
 interface Props {
   name: IconName;
@@ -200,6 +213,111 @@ function glyph(
           <Path d="M4 21a8 8 0 0 1 16 0" {...p} />
         </>
       );
+
+    /* ---- bottom bar. `filled` marks the selected tab. ---- */
+    case 'home':
+      return (
+        <Path
+          d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"
+          {...p}
+          fill={filled ? stroke : 'none'}
+        />
+      );
+    case 'compass':
+      return (
+        <>
+          <Circle cx={12} cy={12} r={9} {...p} fill={filled ? stroke : 'none'} />
+          <Path
+            d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5z"
+            {...p}
+            stroke={filled ? '#FFFFFF' : stroke}
+            fill="none"
+          />
+        </>
+      );
+    case 'people':
+      return (
+        <>
+          <Circle cx={9} cy={8.5} r={3.2} {...p} fill={filled ? stroke : 'none'} />
+          <Path d="M2.5 20a6.5 6.5 0 0 1 13 0" {...p} fill={filled ? stroke : 'none'} />
+          <Path d="M16 5.6a3.2 3.2 0 0 1 0 5.8" {...p} />
+          <Path d="M17.5 14.2A6.5 6.5 0 0 1 21.5 20" {...p} />
+        </>
+      );
+
+    /* ---- home surfaces ---- */
+    case 'bell':
+      return (
+        <>
+          <Path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7" {...p} />
+          <Path d="M10.5 20a1.8 1.8 0 0 0 3 0" {...p} />
+        </>
+      );
+    case 'heart':
+      return (
+        <Path
+          d="M12 20s-7.5-4.6-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"
+          {...p}
+          fill={filled ? stroke : 'none'}
+        />
+      );
+    case 'comment':
+      return (
+        <Path d="M20 15a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z" {...p} />
+      );
+    case 'tag':
+      return (
+        <>
+          <Path d="M3 11.5V5a2 2 0 0 1 2-2h6.5L21 12.5 12.5 21z" {...p} />
+          <Circle cx={7.5} cy={7.5} r={1.4} {...p} />
+        </>
+      );
+    case 'sparkle':
+      return (
+        <>
+          <Path d="M12 3.5 13.6 9 19 10.5 13.6 12 12 17.5 10.4 12 5 10.5 10.4 9z" {...p} />
+          <Path d="M18 16.5 18.7 19 21 19.7 18.7 20.4 18 22.7 17.3 20.4 15 19.7 17.3 19z" {...p} />
+        </>
+      );
+
+    /* ---- composer ---- */
+    case 'mic':
+      return (
+        <>
+          <Rect x={9} y={3} width={6} height={11} rx={3} {...p} />
+          <Path d="M5.5 11.5a6.5 6.5 0 0 0 13 0" {...p} />
+          <Line x1={12} y1={18} x2={12} y2={21} {...p} />
+        </>
+      );
+    case 'keyboard':
+      return (
+        <>
+          <Rect x={2.5} y={6} width={19} height={12} rx={2} {...p} />
+          <Line x1={6.5} y1={10} x2={6.5} y2={10} {...p} />
+          <Line x1={10} y1={10} x2={10} y2={10} {...p} />
+          <Line x1={13.5} y1={10} x2={13.5} y2={10} {...p} />
+          <Line x1={17.5} y1={10} x2={17.5} y2={10} {...p} />
+          <Line x1={8} y1={14} x2={16} y2={14} {...p} />
+        </>
+      );
+    case 'calendar':
+      return (
+        <>
+          <Rect x={3.5} y={5} width={17} height={16} rx={2} {...p} />
+          <Line x1={3.5} y1={9.5} x2={20.5} y2={9.5} {...p} />
+          <Line x1={8} y1={3} x2={8} y2={6} {...p} />
+          <Line x1={16} y1={3} x2={16} y2={6} {...p} />
+        </>
+      );
+    case 'pin':
+      return (
+        <>
+          <Path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11z" {...p} />
+          <Circle cx={12} cy={10} r={2.6} {...p} />
+        </>
+      );
+    case 'chevronRight':
+      return <Polyline points="9.5 5 16.5 12 9.5 19" {...p} />;
     case 'search':
       return (
         <>

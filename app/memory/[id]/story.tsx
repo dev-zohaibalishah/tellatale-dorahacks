@@ -230,7 +230,7 @@ export default function Story() {
               />
               <Button
                 label="Link"
-                variant="secondary"
+                variant="outline"
                 onPress={async () => {
                   const outcome = await shareLink(shareUrl, shareMessage);
                   toast(
@@ -289,7 +289,7 @@ export default function Story() {
             <Row gap={space.sm}>
               <Button
                 label="Cancel"
-                variant="secondary"
+                variant="outline"
                 onPress={() => {
                   setDraftTitle(story.ownerEditedTitle ?? story.title);
                   setDraftStory(story.ownerEditedStory ?? story.story);
@@ -350,7 +350,7 @@ export default function Story() {
       {approved ? (
         <Card>
           <Row style={styles.visibilityRow}>
-            <Icon name={published ? 'globe' : 'lock'} size={18} color={published ? c.signal : c.textMuted} />
+            <Icon name={published ? 'globe' : 'lock'} size={18} color={published ? c.accent : c.textMuted} />
             <Text variant="meta" tone="muted" style={styles.grow}>
               {published
                 ? 'Anyone with the link can read this story.'
@@ -442,7 +442,7 @@ function RatingRow({ onRate }: { onRate: (n: number) => void }) {
               hitSlop={6}
               style={styles.star}
             >
-              <Icon name="star" size={26} color={c.signal} filled={n <= hover} />
+              <Icon name="star" size={26} color={c.accent} filled={n <= hover} />
             </Pressable>
           ))}
         </Row>

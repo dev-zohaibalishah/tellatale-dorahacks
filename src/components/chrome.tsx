@@ -92,7 +92,7 @@ export function Header({
         <View style={[styles.headerSlot, styles.headerRight]}>{right}</View>
       </View>
       {eyebrow ? (
-        <Text variant="metaLabel" tone="muted">
+        <Text variant="eyebrow" tone="muted">
           {eyebrow}
         </Text>
       ) : null}
@@ -119,8 +119,8 @@ export function StatusPill({ status }: { status: Status }) {
   // not an action, so it stays in the muted register.
   const published = status === 'published';
   return (
-    <View style={[styles.pill, { borderColor: published ? c.signal : c.hairline }]}>
-      <Text variant="metaLabel" tone={published ? 'signal' : 'muted'}>
+    <View style={[styles.pill, { borderColor: published ? c.accent : c.hairline }]}>
+      <Text variant="eyebrow" tone={published ? 'accent' : 'muted'}>
         {statusCopy[status]}
       </Text>
     </View>
@@ -160,7 +160,7 @@ export function ToggleRow({
         (pressed || disabled) && { opacity: 0.7 },
       ]}
     >
-      <Icon name={icon} size={20} color={value ? c.signal : c.textMuted} />
+      <Icon name={icon} size={20} color={value ? c.accent : c.textMuted} />
       <View style={styles.toggleText}>
         <Text variant="ui">{title}</Text>
         <Text variant="meta" tone="muted">
@@ -171,8 +171,8 @@ export function ToggleRow({
         style={[
           styles.track,
           {
-            backgroundColor: value ? c.signal : c.surfaceRaised,
-            borderColor: value ? c.signal : c.hairline,
+            backgroundColor: value ? c.accent : c.surfaceRaised,
+            borderColor: value ? c.accent : c.hairline,
           },
         ]}
       >
@@ -206,7 +206,7 @@ export function StepDots({ total, index }: { total: number; index: number }) {
           style={[
             styles.dot,
             {
-              backgroundColor: i <= index ? c.signal : c.hairline,
+              backgroundColor: i <= index ? c.accent : c.hairline,
               // The current step is a bar, not a dot — position reads at a glance
               // without counting.
               width: i === index ? 22 : 6,
@@ -286,7 +286,7 @@ export function SectionHead({
   return (
     <View style={styles.sectionHead}>
       <View style={styles.sectionText}>
-        <Text variant="metaLabel" tone="muted">
+        <Text variant="eyebrow" tone="muted">
           {label}
         </Text>
         {note ? (

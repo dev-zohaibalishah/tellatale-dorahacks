@@ -1,69 +1,85 @@
 /**
- * Design tokens — Heirloom PRD v1.0 §10.2, verbatim.
+ * Design tokens — Heirloom (Figma).
  *
- * Two rules from the PRD that are load-bearing, not stylistic:
+ * This replaces the earlier dark ink-blue palette entirely. Two things changed at the
+ * root, and both ripple everywhere:
  *
- *  1. `datestamp` is reserved for CONTRIBUTION ACTIONS ONLY (post, add your side,
- *     answer, tag). Nothing else in the product is that colour. Warmth in this
- *     interface means someone did something. Do not use it for emphasis, links,
- *     selected states, or decoration — use `signal` for those.
- *  2. Narrative is serif, metadata is monospace. That distinction separates what a
- *     person said from what the archive knows about it, which is the central
- *     distinction in the product. See ./typography.ts.
+ *   • Light-first. The ground is white, cards are white on a faint grey, and depth
+ *     comes from soft shadow rather than from a hairline on a dark field.
+ *   • One accent, not two. The old palette reserved a warm orange strictly for
+ *     contribution actions and used a separate blue for links. The Figma uses a single
+ *     crimson for every affordance — primary buttons, the FAB, pagination, "See all",
+ *     toggles. So `accent` is that colour and the old reserved-orange rule no longer
+ *     applies. Restraint now comes from *how much* is coloured, not from what.
  *
- * Extend the token set rather than hardcoding values into components.
+ * Values were read from the design screenshots, so hexes are close rather than exact.
+ * They are all here in one place: when the Figma inspector values arrive, this file is
+ * the only edit.
  */
 
-export type ThemeName = 'dark' | 'light';
+export type ThemeName = 'light' | 'dark';
 
 export interface Palette {
   /** App ground. */
   ink: string;
-  /** Cards, sheets. */
+  /** Cards, sheets, bottom bar. */
   surface: string;
-  /** Inputs, pressed states. */
+  /** Inputs, chips, inset panels, the faint grey behind cards. */
   surfaceRaised: string;
-  /** 1px dividers, borders, graph edges. */
+  /** 1px dividers and borders. */
   hairline: string;
   /** Primary text. */
   text: string;
-  /** Metadata, captions, timestamps. */
+  /** Secondary text, captions, metadata. */
   textMuted: string;
-  /** CONTRIBUTION ACTIONS ONLY. */
-  datestamp: string;
-  /** Links, selected states. */
-  signal: string;
+  /** The single accent: primary buttons, FAB, pagination, links, active toggles. */
+  accent: string;
+  /** Accent at low opacity — a disabled primary button. */
+  accentSoft: string;
+  /** Text/icon colour that sits on top of `accent`. */
+  onAccent: string;
+  /** Near-black button (the splash "Get started"). */
+  inkButton: string;
+  /** Text on `inkButton`. */
+  onInkButton: string;
   /** Destructive only. */
   warn: string;
 }
 
 export const palettes: Record<ThemeName, Palette> = {
-  dark: {
-    ink: '#10141C',
-    surface: '#1A202B',
-    surfaceRaised: '#232B38',
-    hairline: '#2E3644',
-    text: '#EDF0F4',
-    textMuted: '#8B96A8',
-    datestamp: '#FF6B2C',
-    signal: '#7FA8D9',
-    warn: '#E0574F',
-  },
   light: {
-    // Cool near-white, deliberately NOT cream.
-    ink: '#F6F7F8',
+    ink: '#FFFFFF',
     surface: '#FFFFFF',
-    surfaceRaised: '#EDEFF2',
-    hairline: '#DDE1E7',
-    text: '#131820',
-    textMuted: '#5F6A7B',
-    datestamp: '#E85A1A',
-    signal: '#2F6BAA',
-    warn: '#E0574F',
+    surfaceRaised: '#F4F4F6',
+    hairline: '#E8E8EC',
+    text: '#16161A',
+    textMuted: '#6E6E78',
+    accent: '#F5334B',
+    accentSoft: '#FBD3DA',
+    onAccent: '#FFFFFF',
+    inkButton: '#1C1C1E',
+    onInkButton: '#FFFFFF',
+    warn: '#E0342F',
+  },
+  // The Figma is light-only. This is a faithful transposition rather than an
+  // invention: the same roles, the same single accent, on a dark ground.
+  dark: {
+    ink: '#0E0E11',
+    surface: '#17171B',
+    surfaceRaised: '#1F1F25',
+    hairline: '#2A2A32',
+    text: '#F2F2F5',
+    textMuted: '#9A9AA6',
+    accent: '#FF425C',
+    accentSoft: '#4A1F27',
+    onAccent: '#FFFFFF',
+    inkButton: '#F2F2F5',
+    onInkButton: '#16161A',
+    warn: '#FF5A52',
   },
 };
 
-/** SPACE 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 */
+/** 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 */
 export const space = {
   xs: 4,
   sm: 8,
@@ -75,45 +91,56 @@ export const space = {
   xxxl: 64,
 } as const;
 
+/** The Figma is noticeably rounder than the previous design. */
 export const radius = {
-  card: 14,
-  /** Top corners only. */
-  sheet: 20,
-  button: 10,
+  card: 16,
+  /** Photo cards and the onboarding hero. */
+  image: 14,
+  /** Bottom sheets, top corners only. */
+  sheet: 24,
+  button: 14,
+  /** Pills: chips, the "Add a memory" bar, tab counters. */
+  pill: 999,
   avatar: 999,
-  image: 8,
 } as const;
 
 export const motion = {
   standard: 200,
   sheet: 320,
-  /** Tag reveal: 260ms, staggered 40ms per label. */
-  reveal: 260,
-  revealStagger: 40,
-  /** cubic-bezier(.2,.8,.2,1) */
   easing: [0.2, 0.8, 0.2, 1] as const,
 } as const;
 
 export const layout = {
-  /** Screen gutter. */
-  gutter: 16,
-  /** Between cards. */
-  cardGutter: 8,
-  /** Minimum touch target — PRD global DoD requires >= 48dp. */
+  gutter: 20,
+  cardGutter: 12,
+  /** Accessibility floor for anything tappable. */
   minTouchTarget: 48,
+  /** Height of the bottom tab bar, excluding the safe-area inset. */
+  tabBar: 62,
+  /** Diameter of the centre FAB. */
+  fab: 56,
 } as const;
 
 /**
- * SHADOW: none on dark (use hairline borders); light mode gets a single soft lift.
- * Returned as a style object rather than a token string so RN can consume it directly.
+ * Depth. In light mode the design leans on soft shadow and mostly omits borders; in
+ * dark mode shadow is invisible, so the same separation has to come from a hairline.
+ * Callers should apply `elevation()` and let it decide.
  */
-export function elevation(theme: ThemeName) {
-  if (theme === 'dark') return {};
+export function elevation(theme: ThemeName, level: 'card' | 'raised' | 'bar' = 'card') {
+  if (theme === 'dark') {
+    return { borderWidth: 1, borderColor: palettes.dark.hairline };
+  }
+  const shadows = {
+    card: { opacity: 0.06, radius: 12, offset: 4, elevation: 2 },
+    raised: { opacity: 0.1, radius: 20, offset: 8, elevation: 6 },
+    bar: { opacity: 0.08, radius: 16, offset: -2, elevation: 8 },
+  }[level];
+
   return {
-    shadowColor: '#131820',
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    shadowColor: '#000000',
+    shadowOpacity: shadows.opacity,
+    shadowRadius: shadows.radius,
+    shadowOffset: { width: 0, height: shadows.offset },
+    elevation: shadows.elevation,
   };
 }

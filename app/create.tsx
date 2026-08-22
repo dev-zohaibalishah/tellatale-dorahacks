@@ -154,7 +154,7 @@ export default function Create() {
             {step > 0 ? (
               <Button
                 label="Back"
-                variant="secondary"
+                variant="outline"
                 onPress={() => setStep((s) => s - 1)}
                 style={styles.half}
               />
@@ -169,7 +169,7 @@ export default function Create() {
             ) : (
               <Button
                 label="Save this memory"
-                variant="contribute"
+                variant="accent"
                 onPress={save}
                 loading={saving}
                 disabled={!stepValid[2]}
@@ -375,9 +375,9 @@ function StepWords({
 
       <Card>
         <Row style={styles.promise}>
-          <Icon name="lock" size={18} color={c.signal} />
+          <Icon name="lock" size={18} color={c.accent} />
           <View style={styles.promiseText}>
-            <Text variant="metaLabel" tone="muted">
+            <Text variant="eyebrow" tone="muted">
               Owner&apos;s original memory
             </Text>
             <Text variant="meta" tone="muted">

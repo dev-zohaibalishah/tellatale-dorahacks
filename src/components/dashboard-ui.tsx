@@ -94,11 +94,11 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
         >
           <Text
             variant="title"
-            style={stat.emphasis ? { color: c.datestamp } : undefined}
+            style={stat.emphasis ? { color: c.accent } : undefined}
           >
             {stat.value}
           </Text>
-          <Text variant="metaLabel" tone="muted" numberOfLines={2}>
+          <Text variant="eyebrow" tone="muted" numberOfLines={2}>
             {stat.label}
           </Text>
         </View>
@@ -129,7 +129,7 @@ export function SearchBar({
         placeholderTextColor={c.textMuted}
         autoCorrect={false}
         accessibilityLabel={placeholder}
-        style={[scale.ui, styles.searchInput, { color: c.text, fontFamily: fonts.ui }]}
+        style={[scale.ui, styles.searchInput, { color: c.text, fontFamily: fonts.regular }]}
       />
       {value.length > 0 ? (
         <Pressable
@@ -221,13 +221,13 @@ function Pill({
       style={({ pressed }) => [
         styles.pill,
         {
-          borderColor: selected ? c.signal : c.hairline,
+          borderColor: selected ? c.accent : c.hairline,
           backgroundColor: selected ? c.surfaceRaised : 'transparent',
         },
         pressed && { opacity: 0.8 },
       ]}
     >
-      {icon ? <Icon name={icon} size={13} color={selected ? c.signal : c.textMuted} /> : null}
+      {icon ? <Icon name={icon} size={13} color={selected ? c.accent : c.textMuted} /> : null}
       <Text variant="ui" tone={selected ? 'default' : 'muted'} numberOfLines={1}>
         {label}
       </Text>

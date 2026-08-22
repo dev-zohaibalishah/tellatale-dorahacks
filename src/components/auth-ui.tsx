@@ -56,7 +56,7 @@ export function AuthField({
   const [revealed, setRevealed] = useState(false);
   const [focused, setFocused] = useState(false);
 
-  const borderColor = problem ? c.warn : focused ? c.signal : c.hairline;
+  const borderColor = problem ? c.warn : focused ? c.accent : c.hairline;
 
   return (
     <View style={styles.fieldBlock}>
@@ -90,7 +90,7 @@ export function AuthField({
           returnKeyType={returnKeyType}
           maxLength={maxLength}
           accessibilityLabel={label}
-          style={[styles.input, scale.ui, { color: c.text, fontFamily: fonts.ui }]}
+          style={[styles.input, scale.ui, { color: c.text, fontFamily: fonts.regular }]}
         />
 
         {secure ? (
@@ -127,7 +127,7 @@ export function PasswordStrength({ password }: { password: string }) {
   if (!password) return null;
 
   const { score, label } = passwordStrength(password);
-  const tone = score >= 3 ? c.signal : score === 2 ? c.textMuted : c.warn;
+  const tone = score >= 3 ? c.accent : score === 2 ? c.textMuted : c.warn;
 
   return (
     <Row gap={space.sm} style={styles.strengthRow}>

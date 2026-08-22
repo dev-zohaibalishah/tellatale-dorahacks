@@ -1,9 +1,17 @@
 /**
  * Buttons.
  *
- * `contribute` is the only variant allowed to use --datestamp, and it exists so the
- * colour rule is expressed as an API rather than a convention someone has to remember:
- * if an action is not a contribution, there is no variant that will make it orange.
+ * The Figma uses four shapes, and each one appears in exactly one situation:
+ *
+ *   accent   — the crimson pill. The single forward action on a screen: Next, Post,
+ *              Get started, Invite. Never two on one screen.
+ *   ink      — the near-black pill, used once, on the splash. It exists because the
+ *              splash has no crimson anywhere and the accent would arrive too early.
+ *   outline  — the paired secondary: "I already have an account".
+ *   ghost    — text-only: Skip, See all, All.
+ *
+ * A disabled accent button goes soft pink rather than translucent, which is why
+ * `accentSoft` is a token and not an opacity.
  */
 
 import React from 'react';
@@ -11,7 +19,6 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -21,12 +28,14 @@ import * as haptics from '../lib/haptics';
 import { useTheme } from '../state/theme';
 import { layout, radius, space } from '../theme/tokens';
 
-type Variant = 'contribute' | 'primary' | 'secondary' | 'ghost' | 'destructive';
+type Variant = 'accent' | 'ink' | 'outline' | 'ghost' | 'destructive';
+type Size = 'regular' | 'compact';
 
 interface Props {
   label: string;
   onPress: () => void;
   variant?: Variant;
+  size?: Size;
   disabled?: boolean;
   loading?: boolean;
   full?: boolean;
@@ -37,7 +46,8 @@ interface Props {
 export function Button({
   label,
   onPress,
-  variant = 'primary',
+  variant = 'accent',
+  size = 'regular',
   disabled,
   loading,
   full,
@@ -48,29 +58,27 @@ export function Button({
   const inactive = disabled || loading;
 
   const surface: Record<Variant, ViewStyle> = {
-    contribute: { backgroundColor: c.datestamp },
-    primary: { backgroundColor: c.surfaceRaised, borderWidth: 1, borderColor: c.hairline },
-    secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.hairline },
+    accent: { backgroundColor: inactive ? c.accentSoft : c.accent },
+    ink: { backgroundColor: c.inkButton },
+    outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.hairline },
     ghost: { backgroundColor: 'transparent' },
-    destructive: { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.warn },
+    destructive: { backgroundColor: 'transparent' },
   };
 
-  const labelTone =
-    variant === 'contribute'
-      ? 'inverse'
-      : variant === 'destructive'
-        ? 'warn'
-        : variant === 'ghost'
-          ? 'muted'
-          : 'default';
+  const tone = {
+    accent: 'onAccent',
+    ink: 'onInk',
+    outline: 'default',
+    ghost: 'muted',
+    destructive: 'warn',
+  }[variant] as 'onAccent' | 'onInk' | 'default' | 'muted' | 'warn';
 
   return (
     <Pressable
       onPress={() => {
-        // Contribution actions get the confirming thump; destructive gets a warning
-        // tick so the hand knows before the eye reads the dialog. Everything else is
-        // silent — see lib/haptics for why that restraint matters.
-        if (variant === 'contribute') haptics.contributed();
+        // The forward action is the one worth feeling. Destructive gets a warning tick
+        // before the dialog appears, so the hand knows ahead of the eye.
+        if (variant === 'accent') haptics.contributed();
         else if (variant === 'destructive') haptics.warned();
         onPress();
       }}
@@ -81,21 +89,22 @@ export function Button({
       accessibilityState={{ disabled: Boolean(inactive), busy: Boolean(loading) }}
       style={({ pressed }) => [
         styles.base,
+        size === 'compact' ? styles.compact : styles.regular,
         surface[variant],
         full && styles.full,
-        inactive && styles.inactive,
+        // A disabled accent button already reads as disabled through colour; dimming
+        // it as well makes the label unreadable.
+        inactive && variant !== 'accent' && styles.inactive,
         pressed && !inactive && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'contribute' ? c.ink : c.textMuted} />
+        <ActivityIndicator color={variant === 'accent' ? c.onAccent : c.textMuted} />
       ) : (
-        <View style={styles.row}>
-          <Text variant="ui" tone={labelTone}>
-            {label}
-          </Text>
-        </View>
+        <Text variant="uiStrong" tone={tone}>
+          {label}
+        </Text>
       )}
     </Pressable>
   );
@@ -103,14 +112,15 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: layout.minTouchTarget,
     borderRadius: radius.button,
-    paddingHorizontal: space.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: space.sm,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  regular: { minHeight: 54, paddingHorizontal: space.lg },
+  compact: { minHeight: layout.minTouchTarget, paddingHorizontal: space.base },
   full: { alignSelf: 'stretch' },
   inactive: { opacity: 0.45 },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: 0.85 },
 });

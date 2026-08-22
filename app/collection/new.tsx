@@ -65,7 +65,7 @@ export default function NewCollection() {
         <ActionBar>
           <Button
             label="Create collection"
-            variant="contribute"
+            variant="accent"
             full
             loading={busy}
             disabled={!canSave}
@@ -84,7 +84,7 @@ export default function NewCollection() {
       <Card>
         <Row gap={space.md}>
           <View style={[styles.icon, { borderColor: c.hairline }]}>
-            <Icon name={collectionIcon(kind)} size={18} color={c.signal} />
+            <Icon name={collectionIcon(kind)} size={18} color={c.accent} />
           </View>
           <View style={styles.grow}>
             <Text variant="heading">{name.trim() || 'Untitled collection'}</Text>

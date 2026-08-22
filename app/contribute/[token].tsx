@@ -84,7 +84,7 @@ export default function Contribute() {
         <Text variant="body" tone="muted">
           {error ?? 'It may have expired, or the memory may have been deleted.'}
         </Text>
-        <Button label="Try again" variant="secondary" onPress={reload} />
+        <Button label="Try again" variant="outline" onPress={reload} />
       </Screen>
     );
   }
@@ -147,7 +147,7 @@ export default function Contribute() {
         {view.publishedStory ? (
           <>
             <Divider />
-            <Text variant="metaLabel" tone="muted">
+            <Text variant="eyebrow" tone="muted">
               The story so far
             </Text>
             <StoryCard
@@ -161,7 +161,7 @@ export default function Contribute() {
         ) : (
           <Card>
             <View style={styles.pending}>
-              <Text variant="metaLabel" tone="muted">
+              <Text variant="eyebrow" tone="muted">
                 Not published yet
               </Text>
               <Text variant="meta" tone="muted">
@@ -171,7 +171,7 @@ export default function Contribute() {
           </Card>
         )}
 
-        <Button label="Add another memory" variant="secondary" onPress={() => setDone(false)} />
+        <Button label="Add another memory" variant="outline" onPress={() => setDone(false)} />
       </Screen>
     );
   }
@@ -185,7 +185,7 @@ export default function Contribute() {
         <ActionBar>
           <Button
             label="Add my memory"
-            variant="contribute"
+            variant="accent"
             onPress={submit}
             loading={sending}
             disabled={!valid}
@@ -277,7 +277,7 @@ function StorySoFar() {
   const { c } = useTheme();
   return (
     <View style={[styles.soFar, { borderColor: c.hairline }]}>
-      <Icon name="check" size={16} color={c.signal} />
+      <Icon name="check" size={16} color={c.accent} />
       <Text variant="meta" tone="muted" style={styles.soFarText}>
         A story has already been published for this photo. Adding your memory can change
         it — the owner can recompose it with your words included.
@@ -330,7 +330,7 @@ function ReactionRow({
   const { c } = useTheme();
   return (
     <View style={styles.reactions}>
-      <Text variant="metaLabel" tone="muted">
+      <Text variant="eyebrow" tone="muted">
         How did that land?
       </Text>
       <Row style={styles.reactionRow}>
@@ -346,7 +346,7 @@ function ReactionRow({
               style={({ pressed }) => [
                 styles.reaction,
                 {
-                  borderColor: active ? c.signal : c.hairline,
+                  borderColor: active ? c.accent : c.hairline,
                   backgroundColor: active ? c.surfaceRaised : 'transparent',
                 },
                 pressed && { opacity: 0.7 },

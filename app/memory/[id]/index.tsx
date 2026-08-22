@@ -137,7 +137,7 @@ export default function MemoryPage() {
             <Row gap={space.sm}>
               <Button
                 label="Regenerate"
-                variant="secondary"
+                variant="outline"
                 onPress={compose}
                 loading={composing}
                 style={styles.half}
@@ -210,7 +210,7 @@ export default function MemoryPage() {
         <View style={styles.ownerBlock}>
           <Row style={styles.ownerHead}>
             <SourceChip source={{ kind: 'owner' }} />
-            <Text variant="metaLabel" tone="muted">
+            <Text variant="eyebrow" tone="muted">
               Original memory
             </Text>
           </Row>
@@ -276,7 +276,7 @@ export default function MemoryPage() {
           action={
             <Button
               label="Invite someone"
-              variant="contribute"
+              variant="accent"
               onPress={() =>
                 router.push({ pathname: '/memory/[id]/invite', params: { id } })
               }

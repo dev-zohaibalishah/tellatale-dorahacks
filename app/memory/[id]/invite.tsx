@@ -122,13 +122,13 @@ export default function Invite() {
       </Pressable>
 
       <Row gap={space.sm}>
-        <Button label="Copy link" variant="secondary" onPress={copy} style={styles.half} />
+        <Button label="Copy link" variant="outline" onPress={copy} style={styles.half} />
         <Button label="Share" onPress={share} style={styles.half} />
       </Row>
 
       <Card>
         <View style={styles.previewBlock}>
-          <Text variant="metaLabel" tone="muted">
+          <Text variant="eyebrow" tone="muted">
             What they will read
           </Text>
           <Text variant="body">{INVITE_PROMPT}</Text>
@@ -154,7 +154,7 @@ function NoDomainWarning() {
   const { c } = useTheme();
   return (
     <View style={[styles.warning, { borderColor: c.warn }]}>
-      <Text variant="metaLabel" tone="warn">
+      <Text variant="eyebrow" tone="warn">
         This link only opens on this device
       </Text>
       <Text variant="meta" tone="muted">

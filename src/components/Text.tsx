@@ -1,10 +1,9 @@
 /**
- * The typographic rule, enforced in code.
+ * Typed text.
  *
- * Narrative variants are serif; `meta` is monospace. That split is the product's
- * central distinction — what a person said vs. what the archive knows about it — so
- * it lives in a component rather than in per-screen style objects where it would
- * quietly drift.
+ * Every string in the app goes through here so the scale stays in one file. `tone`
+ * covers the four colour roles the design actually uses — anything beyond that is a
+ * sign the palette needs a token, not that this needs a prop.
  */
 
 import React from 'react';
@@ -14,17 +13,16 @@ import { type as scale } from '../theme/typography';
 import { useTheme } from '../state/theme';
 
 type Variant = keyof typeof scale;
-type Tone = 'default' | 'muted' | 'signal' | 'datestamp' | 'warn' | 'inverse';
+type Tone = 'default' | 'muted' | 'accent' | 'onAccent' | 'onInk' | 'warn';
 
 export interface AppTextProps extends TextProps {
   variant?: Variant;
   tone?: Tone;
-  /** Convenience — most metadata reads centred under a plate. */
   center?: boolean;
 }
 
 export function Text({
-  variant = 'ui',
+  variant = 'body',
   tone = 'default',
   center,
   style,
@@ -35,11 +33,10 @@ export function Text({
   const color: Record<Tone, string> = {
     default: c.text,
     muted: c.textMuted,
-    signal: c.signal,
-    // Only ever correct on a contribution action. See tokens.ts.
-    datestamp: c.datestamp,
+    accent: c.accent,
+    onAccent: c.onAccent,
+    onInk: c.onInkButton,
     warn: c.warn,
-    inverse: c.ink,
   };
 
   const base: TextStyle = {

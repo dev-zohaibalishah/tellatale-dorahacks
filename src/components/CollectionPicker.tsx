@@ -83,7 +83,7 @@ export function CollectionPicker({
   return (
     <View style={styles.block}>
       <Row style={styles.head}>
-        <Text variant="metaLabel" tone="muted">
+        <Text variant="eyebrow" tone="muted">
           Collections
         </Text>
         <Pressable
@@ -92,7 +92,7 @@ export function CollectionPicker({
           accessibilityLabel="New collection"
           hitSlop={8}
         >
-          <Text variant="meta" tone="signal">
+          <Text variant="meta" tone="accent">
             New
           </Text>
         </Pressable>
@@ -117,7 +117,7 @@ export function CollectionPicker({
                 style={({ pressed }) => [
                   styles.chip,
                   {
-                    borderColor: on ? c.signal : c.hairline,
+                    borderColor: on ? c.accent : c.hairline,
                     backgroundColor: on ? c.surfaceRaised : 'transparent',
                   },
                   pressed && { opacity: 0.8 },
@@ -126,7 +126,7 @@ export function CollectionPicker({
                 <Icon
                   name={on ? 'check' : collectionIcon(col.kind)}
                   size={13}
-                  color={on ? c.signal : c.textMuted}
+                  color={on ? c.accent : c.textMuted}
                 />
                 <Text variant="ui" tone={on ? 'default' : 'muted'}>
                   {col.name}
