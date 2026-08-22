@@ -1,0 +1,58 @@
+name: CI
+
+# Runs on every push and pull request. The point is to fail here, in ninety seconds,
+# rather than in an EAS build queue twenty minutes later — and to catch the class of
+# problem that only shows up in a native build. `expo-doctor` is the one that earns
+# its place: it is what found the missing react-native-worklets peer dependency,
+# which was invisible on web and in Expo Go and would have crashed the first APK on
+# launch.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Typecheck and project health
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # `npm ci` rather than `npm install`: it installs exactly the lockfile, so CI
+      # cannot pass against a dependency tree that nobody else has.
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Project health
+        run: npx expo-doctor@latest
+
+      # Proves the native project still generates from the config. This is where a
+      # broken config plugin, a bad entitlement, or a malformed intent filter shows
+      # up — none of which the web bundle would ever notice.
+      - name: Android config generates
+        run: npx expo prebuild --platform android --no-install --clean
+        env:
+          # Deliberately set here so the generated manifest is exercised WITH a link
+          # host, which is the path that previously shipped a literal
+          # "$EXPO_PUBLIC_LINK_HOST" into the intent filter.
+          EXPO_PUBLIC_LINK_HOST: example.com
+
+      - name: Assert no unresolved config placeholders reached the manifest
+        run: |
+          if grep -rq 'EXPO_PUBLIC_' android/app/src/main/AndroidManifest.xml; then
+            echo "A config placeholder leaked into the Android manifest."
+            grep -rn 'EXPO_PUBLIC_' android/app/src/main/AndroidManifest.xml
+            exit 1
+          fi
+          echo "Manifest is clean."
