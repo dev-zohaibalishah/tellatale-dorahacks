@@ -26,15 +26,15 @@ const INK = '#10141C';
  * against a dynamic config it prints the id and expects you to add it by hand, which
  * is what this is.
  *
- * If EAS reports a slug mismatch, the project behind this id is named something other
- * than `tellatale`. Rename it in the Expo dashboard (Project settings -> Name) rather
- * than renaming the app to match; the slug ends up in build URLs and update channels.
+ * `slug` must match the Expo dashboard project. The on-device name, scheme, and
+ * bundle id stay TellaTale; this field is only the Expo URL identifier.
  */
 const EAS_PROJECT_ID = '9518139d-e38c-4731-9ac3-3dd61518d77a';
 
 const config: ExpoConfig = {
   name: 'TellaTale',
-  slug: 'tellatale',
+  slug: 'zohaib-ali-shah',
+  owner: 'zohaib-ali-shah',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',

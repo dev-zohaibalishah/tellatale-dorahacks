@@ -4,19 +4,21 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "//": "EXPO_PUBLIC_* values live here rather than in .env because .env is gitignored, and a build triggered from GitHub clones the repo without it. The app treats missing Supabase config as 'run on-device only', so a cloud build would have installed, opened, and quietly had no backend — which looks like success. These belong in the repo for the same reason they are safe in it: they are compiled into the APK regardless, and access is decided by Row Level Security, not by hiding them. The service role key is a different thing entirely and never appears here.",
-
     "base": {
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://vaaoyltakckcdtkwfxph.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_taQk0OdbiWfIn2pgcxxpVA_I5P8fuN2",
         "EXPO_PUBLIC_FORCE_LOCAL": "false"
+      },
+      "android": {
+        "image": "latest"
+      },
+      "ios": {
+        "image": "latest"
       }
     },
-
     "development": {
       "extends": "base",
-      "//": "Build this first. It produces a dev client — the app shell with your native modules compiled in — which is what makes push, deep links and haptics testable at all. Expo Go cannot do those.",
       "developmentClient": true,
       "distribution": "internal",
       "android": {
@@ -26,19 +28,15 @@
         "simulator": false
       }
     },
-
     "preview": {
       "extends": "base",
-      "//": "A release build you can hand to someone. APK rather than AAB so it installs by sideload without going through Play.",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       }
     },
-
     "production": {
       "extends": "base",
-      "//": "Store submission. Android emits an AAB, which is what Play requires.",
       "autoIncrement": true
     }
   },
