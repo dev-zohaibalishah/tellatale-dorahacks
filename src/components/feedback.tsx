@@ -24,6 +24,7 @@ import { Animated, Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from './Button';
 import { Text } from './Text';
+import * as haptics from '../lib/haptics';
 import { useTheme } from '../state/theme';
 import { layout, radius, space } from '../theme/tokens';
 
@@ -119,6 +120,9 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const show = useCallback((message: string, tone: ToastTone = 'neutral') => {
+    // Outcome haptics live here so every screen gets them without remembering to.
+    if (tone === 'good') haptics.succeeded();
+    else if (tone === 'bad') haptics.failed();
     if (timer.current) clearTimeout(timer.current);
     setToast({ message, tone, key: Date.now() });
     timer.current = setTimeout(() => setToast(null), 2600);

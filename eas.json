@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "//": "development is the one to build first. It produces a dev client — the app shell with your native modules compiled in — which is what makes push, deep links and haptics testable at all. Expo Go cannot do those.",
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+    "preview": {
+      "//": "A release build you can hand to someone. APK rather than AAB so it installs by sideload without going through Play.",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "//": "Store submission. Android emits an AAB, which is what Play requires.",
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

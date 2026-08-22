@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { Text } from './Text';
+import * as haptics from '../lib/haptics';
 import { useTheme } from '../state/theme';
 import { layout, radius, space } from '../theme/tokens';
 
@@ -65,7 +66,14 @@ export function Button({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        // Contribution actions get the confirming thump; destructive gets a warning
+        // tick so the hand knows before the eye reads the dialog. Everything else is
+        // silent — see lib/haptics for why that restraint matters.
+        if (variant === 'contribute') haptics.contributed();
+        else if (variant === 'destructive') haptics.warned();
+        onPress();
+      }}
       disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={label}

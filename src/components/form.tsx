@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text } from './Text';
 import { Row } from './layout';
+import * as haptics from '../lib/haptics';
 import { useTheme } from '../state/theme';
 import { fonts, type as scale } from '../theme/typography';
 import { layout, radius, space } from '../theme/tokens';
@@ -105,7 +106,10 @@ export function ChoiceRow<T extends string>({
           return (
             <Pressable
               key={ch.value}
-              onPress={() => onChange(ch.value)}
+              onPress={() => {
+                haptics.selected();
+                onChange(ch.value);
+              }}
               accessibilityRole="radio"
               accessibilityState={{ selected: active }}
               accessibilityLabel={ch.label}
@@ -145,7 +149,10 @@ export function CheckRow({
   const { c } = useTheme();
   return (
     <Pressable
-      onPress={onToggle}
+      onPress={() => {
+        haptics.selected();
+        onToggle();
+      }}
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       // react-native-web does not map accessibilityState.checked onto aria-checked,
