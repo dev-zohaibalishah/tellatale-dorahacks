@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "TellaTale",
+    "slug": "tellatale",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "tellatale",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "backgroundColor": "#10141C",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.tellatale.app",
+      "associatedDomains": ["applinks:$EXPO_PUBLIC_LINK_HOST"],
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "TellaTale needs access to your photos so you can choose the image a memory is built around.",
+        "NSCameraUsageDescription": "TellaTale uses the camera so you can photograph a print or an object you want to remember together."
+      }
+    },
+    "android": {
+      "package": "xyz.tellatale.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#10141C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "$EXPO_PUBLIC_LINK_HOST" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-sharing",
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#10141C",
+          "dark": { "backgroundColor": "#10141C" },
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TellaTale needs access to your photos so you can choose the image a memory is built around.",
+          "cameraPermission": "TellaTale uses the camera so you can photograph a print or an object you want to remember together."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

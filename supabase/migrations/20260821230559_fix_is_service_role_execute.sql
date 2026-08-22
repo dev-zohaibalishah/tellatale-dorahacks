@@ -1,0 +1,16 @@
+-- Regression fix.
+--
+-- `is_service_role()` was revoked from anon/authenticated in
+-- 20260821215746_harden_functions.sql while tightening the RPC surface. But it is
+-- called by the guard TRIGGERS, which run as the invoking user — so revoking it made
+-- every insert and update fail with
+-- "permission denied for function is_service_role". The security lint was right that
+-- functions should not be casually exposed, and wrong about this one.
+--
+-- Re-granting is safe: the function takes no arguments, touches no table, and only
+-- reports whether the caller's own JWT claims say `service_role`. It cannot be used
+-- to discover anything the caller does not already possess.
+--
+-- SECURITY INVOKER is deliberate — as DEFINER it would always report the definer's
+-- role and the guards would wave every client write straight through.
+grant execute on function public.is_service_role() to authenticated, anon;

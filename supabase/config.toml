@@ -1,0 +1,72 @@
+# Supabase CLI config.
+#
+# The hosted project is the source of truth for this build; this file exists so
+# `supabase link` / `supabase db push` / `supabase functions deploy` work from the
+# repo, and so `supabase start` gives a fully offline stack once Docker is available.
+#
+# Anonymous sign-in is set here for local runs. On the hosted project it is a
+# dashboard toggle (Authentication -> Sign In / Providers -> Anonymous sign-ins) and
+# must be enabled there separately — the CLI cannot set it remotely.
+
+project_id = "tellatale"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[storage]
+enabled = true
+file_size_limit = "12MiB"
+
+[storage.buckets.memories]
+public = false
+file_size_limit = "12MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/heic"]
+
+[auth]
+enabled = true
+site_url = "tellatale://"
+additional_redirect_urls = ["tellatale://", "http://localhost:8081"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+
+# The product's whole point is that contributing needs no account. The owner still
+# needs an identity to hang memories off, and anonymous sign-in gives them one with
+# zero friction — no email, no password, no wall before they have seen the product.
+[auth.anonymous_sign_ins]
+enabled = true
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+
+[edge_runtime]
+enabled = true
+policy = "oneshot"
+inspector_port = 8083
+
+# Guest endpoints must stay open: a contributor has no JWT to present. The invite
+# token is the credential, and each of these validates it, rate-limits the caller and
+# resolves it server-side. compose-story is the opposite — owner-only, JWT required.
+[functions.guest-memory]
+verify_jwt = false
+
+[functions.submit-remark]
+verify_jwt = false
+
+[functions.add-reaction]
+verify_jwt = false
+
+[functions.auth-signup]
+verify_jwt = false
+
+[functions.compose-story]
+verify_jwt = true
