@@ -47,8 +47,8 @@ export default function Story() {
   const confirm = useConfirm();
   const { c } = useTheme();
 
-  const { data: memory, loading: memoryLoading } = useMemory(id);
-  const { data: story, loading: storyLoading } = useStory(id);
+  const { data: memory, loading: memoryLoading, reload: reloadMemory } = useMemory(id);
+  const { data: story, loading: storyLoading, reload: reloadStory } = useStory(id);
   const { data: remarks } = useRemarks(id);
   const { url: imageUrl, failed: imageFailed } = useImageUrl(memory?.imagePath);
 
@@ -146,6 +146,10 @@ export default function Story() {
     setBusy('approve');
     try {
       await repository().approveStory(id);
+      // Approval writes to stories and a trigger copies it onto the memory. Ask for
+      // both again rather than waiting on a realtime echo that may not come.
+      reloadStory();
+      reloadMemory();
       track({ name: 'story_approved', remarkCount: story.sourceRemarkIds.length });
       toast('Approved. You can publish it now.', 'good');
     } finally {
@@ -162,6 +166,8 @@ export default function Story() {
     });
     if (!ok) return;
     await repository().unapproveStory(id);
+    reloadStory();
+    reloadMemory();
     toast('Withdrawn. It is private again.');
   }
 

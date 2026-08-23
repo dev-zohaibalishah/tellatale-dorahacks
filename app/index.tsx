@@ -21,6 +21,8 @@ import { Skeleton } from '../src/components/chrome';
 import {
   Avatar,
   ComposeBar,
+  FeedFilterRow,
+  type FeedFilterKey,
   SectionRow,
   TodoChip,
 } from '../src/components/home-ui';
@@ -63,6 +65,7 @@ export default function Home() {
   usePushRegistration(uid);
 
   const [tab, setTab] = useState<TabKey>('home');
+  const [filter, setFilter] = useState<FeedFilterKey>('all');
 
   useEffect(() => {
     if (ready && uid) track({ name: 'participant', role: 'owner' });
@@ -80,6 +83,24 @@ export default function Home() {
     () => memories.reduce((n, m) => n + m.contributorCount, 0),
     [memories]
   );
+
+  // Private and public are the only two states a memory has, so the counts are a
+  // partition of the list rather than three independent queries.
+  const counts = useMemo(() => {
+    const publicCount = memories.filter((m) => m.visibility === 'public').length;
+    return {
+      all: memories.length,
+      private: memories.length - publicCount,
+      public: publicCount,
+    };
+  }, [memories]);
+
+  const shown = useMemo(() => {
+    if (filter === 'all') return memories;
+    return memories.filter((m) =>
+      filter === 'public' ? m.visibility === 'public' : m.visibility !== 'public'
+    );
+  }, [memories, filter]);
 
   const unreadCount = notifications.filter((n) => n.readAt === null).length;
   const firstName = nameFor(profile).split(' ')[0];
@@ -162,6 +183,10 @@ export default function Home() {
             <TodoChip icon="tag" label="Tag faces" onPress={() => router.push('/people')} />
             <TodoChip icon="sparkle" label="Flashbacks" onPress={() => router.push('/explore')} />
           </ScrollView>
+
+          {/* A second layer, and a different job. The row above navigates away; this
+              one changes what the feed below shows and stays where it is. */}
+          <FeedFilterRow active={filter} counts={counts} onChange={setFilter} />
         </View>
 
         {/* ------------------------------------------------ waiting question
@@ -189,9 +214,20 @@ export default function Home() {
                 <Button label="Add a memory" onPress={() => router.push('/add')} />
               }
             />
+          ) : shown.length === 0 ? (
+            // The archive is not empty; this filter is. Saying so — rather than
+            // reusing the "add your first memory" copy — is the difference between
+            // a filter and a bug.
+            <EmptyState
+              line={
+                filter === 'public'
+                  ? 'None of your memories are public yet. Approve a story, then turn on link sharing to publish it.'
+                  : 'Every one of your memories is public. Nothing is being kept private right now.'
+              }
+            />
           ) : (
             <View style={styles.feed}>
-              {memories.map((memory) => (
+              {shown.map((memory) => (
                 <FeedRow key={memory.id} memory={memory} authorName={firstName || 'You'} />
               ))}
             </View>

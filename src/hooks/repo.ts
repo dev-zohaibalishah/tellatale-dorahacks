@@ -118,12 +118,28 @@ export function useMemory(id: string | undefined): Async<Memory | null> & {
   return { ...state, reload };
 }
 
-export function useRemarks(memoryId: string | undefined): Async<Remark[]> {
+/**
+ * Remarks, watched — with a way to ask again.
+ *
+ * A watch* hook reads as a promise that the list keeps itself current, and for
+ * months it did not: the realtime publication was empty, so these subscriptions
+ * delivered nothing and the only thing refreshing the list was the fetch on mount.
+ * Including or excluding a remark writes to the database and then waits for an echo
+ * that never arrives, so the switch the owner just flipped stays where it was.
+ *
+ * The publication is fixed, but a screen whose correctness depends on a websocket
+ * being healthy is a screen that breaks on a train. reload() makes the live path an
+ * optimisation rather than the only one.
+ */
+export function useRemarks(memoryId: string | undefined): Async<Remark[]> & {
+  reload: () => void;
+} {
   const [state, setState] = useState<Async<Remark[]>>({
     data: [],
     loading: true,
     error: null,
   });
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!memoryId) return;
@@ -135,17 +151,21 @@ export function useRemarks(memoryId: string | undefined): Async<Remark[]> {
       setState({ data: [], loading: false, error: message(e) });
       return;
     }
-  }, [memoryId]);
+  }, [memoryId, nonce]);
 
-  return state;
+  return { ...state, reload: useCallback(() => setNonce((n) => n + 1), []) };
 }
 
-export function useStory(memoryId: string | undefined): Async<StoryDoc | null> {
+/** Same bargain as useRemarks: live when the socket is healthy, correct regardless. */
+export function useStory(memoryId: string | undefined): Async<StoryDoc | null> & {
+  reload: () => void;
+} {
   const [state, setState] = useState<Async<StoryDoc | null>>({
     data: null,
     loading: true,
     error: null,
   });
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     if (!memoryId) return;
@@ -157,9 +177,9 @@ export function useStory(memoryId: string | undefined): Async<StoryDoc | null> {
       setState({ data: null, loading: false, error: message(e) });
       return;
     }
-  }, [memoryId]);
+  }, [memoryId, nonce]);
 
-  return state;
+  return { ...state, reload: useCallback(() => setNonce((n) => n + 1), []) };
 }
 
 /**

@@ -20,7 +20,7 @@ import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -37,6 +37,11 @@ import { useConfirm, useToast } from '../src/components/feedback';
 import { Icon, type IconName } from '../src/components/icons';
 import { Text } from '../src/components/Text';
 import { repository } from '../src/data';
+import {
+  appendTranscript,
+  dictationAvailable,
+  useDictation,
+} from '../src/hooks/useDictation';
 import * as haptics from '../src/lib/haptics';
 import { useSession } from '../src/state/auth';
 import { useTheme } from '../src/state/theme';
@@ -69,6 +74,12 @@ export default function AddMemory() {
   const [consent, setConsent] = useState(false);
   const [expanded, setExpanded] = useState<'when' | 'where' | 'who' | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Dictated text is appended to whatever is already typed, never substituted for
+  // it — see the note in useDictation.
+  const dictation = useDictation((said) => setStory((prev) => appendTranscript(prev, said)));
+  const canDictate = useMemo(() => dictationAvailable(), []);
+  const listening = dictation.status === 'listening';
 
   const cover = photos[0] ?? null;
   // A title is not asked for — the design does not have one — so the first line of
@@ -258,14 +269,56 @@ export default function AddMemory() {
           </View>
 
           {mode === 'speak' ? (
-            <View style={[styles.speakNote, { borderColor: c.hairline }]}>
-              <Icon name="mic" size={18} color={c.textMuted} />
-              <Text variant="label" tone="muted" style={styles.grow}>
-                Speaking a memory needs on-device dictation, which only exists in a
-                development build — not in the browser. Until then, use your keyboard&apos;s
-                own microphone key, which types straight into the box below.
-              </Text>
-            </View>
+            canDictate ? (
+              <View style={[styles.speakNote, { borderColor: listening ? c.accent : c.hairline }]}>
+                <Pressable
+                  onPress={dictation.toggle}
+                  accessibilityRole="button"
+                  accessibilityLabel={listening ? 'Stop dictating' : 'Start dictating'}
+                  accessibilityState={{ busy: listening }}
+                  style={[
+                    styles.micButton,
+                    { backgroundColor: listening ? c.accent : c.inkButton },
+                  ]}
+                >
+                  <Icon
+                    name={listening ? 'close' : 'mic'}
+                    size={20}
+                    color={listening ? c.onAccent : c.onInkButton}
+                  />
+                </Pressable>
+
+                <View style={styles.grow}>
+                  <Text variant="ui">
+                    {dictation.status === 'starting'
+                      ? 'Starting…'
+                      : listening
+                        ? 'Listening — speak naturally'
+                        : 'Tap the microphone and talk'}
+                  </Text>
+
+                  {/* The provisional line. Shown so someone can see they are being
+                      heard, and deliberately not written into the story until the
+                      recogniser commits it. */}
+                  <Text variant="label" tone="muted" numberOfLines={2}>
+                    {dictation.error
+                      ? dictation.error
+                      : dictation.partial
+                        ? dictation.partial
+                        : 'Your words go into the box below, where you can edit them. Nothing is recorded.'}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={[styles.speakNote, { borderColor: c.hairline }]}>
+                <Icon name="mic" size={18} color={c.textMuted} />
+                <Text variant="label" tone="muted" style={styles.grow}>
+                  Dictation needs a development build — Expo Go has no speech module,
+                  and this browser has no Web Speech API. Until then, your keyboard&apos;s
+                  own microphone key types straight into the box below.
+                </Text>
+              </View>
+            )
           ) : null}
 
           {/* -------------------------------------------------------- story */}
@@ -587,10 +640,17 @@ const styles = StyleSheet.create({
     minHeight: 42,
     borderRadius: radius.pill,
   },
+  micButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   speakNote: {
     flexDirection: 'row',
     gap: space.md,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: radius.button,

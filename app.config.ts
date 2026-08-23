@@ -71,6 +71,10 @@ const config: ExpoConfig = {
         'TellaTale needs access to your photos so you can choose the image a memory is built around.',
       NSCameraUsageDescription:
         'TellaTale uses the camera so you can photograph a print or an object you want to remember together.',
+      NSMicrophoneUsageDescription:
+        'TellaTale uses the microphone only while you are speaking a memory, so it can be written down for you.',
+      NSSpeechRecognitionUsageDescription:
+        'Speech recognition turns a spoken memory into text you can edit before posting. Nothing is recorded or kept.',
     },
   },
 
@@ -100,14 +104,19 @@ const config: ExpoConfig = {
       : {}),
     // Vibration is what expo-haptics falls back to on devices without a haptic
     // engine, and Android requires the permission declared even for that.
-    permissions: ['android.permission.VIBRATE'],
+    permissions: ['android.permission.VIBRATE', 'android.permission.RECORD_AUDIO'],
 
-    // expo-image-picker declares RECORD_AUDIO because it can pick video. TellaTale
-    // picks images only — `mediaTypes: ['images']` everywhere — so the manifest was
-    // asking for the microphone in a photo app. Users read that as surveillance and
-    // Play reviewers ask about it. Blocked rather than explained.
+    // RECORD_AUDIO used to be blocked here, and the reasoning was sound at the time:
+    // expo-image-picker declares it because it can pick video, TellaTale picks images
+    // only, and a photo app asking for a microphone reads as surveillance.
+    //
+    // "Speak it" changes the answer. Dictating a memory is the most important
+    // accessibility route into this product — the people whose memories are most worth
+    // keeping are often the least comfortable with a phone keyboard — and it cannot
+    // work without the microphone. So it is requested now, named honestly in the usage
+    // strings above, and asked for at the moment someone taps "Speak it" rather than
+    // on launch.
     blockedPermissions: [
-      'android.permission.RECORD_AUDIO',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
     ],
@@ -125,6 +134,15 @@ const config: ExpoConfig = {
     'expo-sharing',
     'expo-font',
     'expo-web-browser',
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission:
+          'TellaTale uses the microphone only while you are speaking a memory, so it can be written down for you.',
+        speechRecognitionPermission:
+          'Speech recognition turns a spoken memory into text you can edit before posting. Nothing is recorded or kept.',
+      },
+    ],
     [
       'expo-splash-screen',
       {

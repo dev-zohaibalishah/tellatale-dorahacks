@@ -52,7 +52,7 @@ export default function MemoryPage() {
   const { uid } = useSession();
 
   const { data: memory, loading, error, reload } = useMemory(id);
-  const { data: remarks, loading: remarksLoading } = useRemarks(id);
+  const { data: remarks, loading: remarksLoading, reload: reloadRemarks } = useRemarks(id);
   const { data: story } = useStory(id);
   const { url: imageUrl, failed: imageFailed } = useImageUrl(memory?.imagePath);
 
@@ -305,6 +305,7 @@ export default function MemoryPage() {
               onToggleInclude={async (next) => {
                 try {
                   await repository().setRemarkIncluded(memory.id, remark.id, next);
+                  reloadRemarks();
                 } catch (e) {
                   // This was fire-and-forget. A failed write left the switch showing
                   // the owner a decision the story would not honour — and they would
@@ -325,6 +326,7 @@ export default function MemoryPage() {
                 if (!ok) return;
                 try {
                   await repository().deleteRemark(memory.id, remark.id);
+                  reloadRemarks();
                   toast('Removed.');
                 } catch (e) {
                   toast(e instanceof Error ? e.message : 'That could not be removed.', 'bad');

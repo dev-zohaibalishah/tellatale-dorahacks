@@ -237,6 +237,16 @@ export function SectionRow({
 }
 
 const styles = StyleSheet.create({
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: space.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
   avatar: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   stack: { flexDirection: 'row', alignItems: 'center' },
 
@@ -295,3 +305,81 @@ const styles = StyleSheet.create({
     minHeight: layout.minTouchTarget - 12,
   },
 });
+
+/* ------------------------------------------------------------ feed filter */
+
+export type FeedFilterKey = 'all' | 'private' | 'public';
+
+/**
+ * The second filter layer under "Things to do".
+ *
+ * Deliberately a different shape from `TodoChip`: those three are destinations —
+ * tapping one leaves the screen — while these three change what the list below shows
+ * and stay put. Giving both rows the same pill would teach that a tap here also
+ * navigates, and the only cue otherwise is that one row happens to be selected.
+ *
+ * The counts are derived from memories already in hand, so they cost nothing and are
+ * never stale. They also answer the question the labels raise — "how many of mine are
+ * actually public?" is the whole reason someone looks at this row.
+ */
+export function FeedFilterRow({
+  active,
+  counts,
+  onChange,
+}: {
+  active: FeedFilterKey;
+  counts: Record<FeedFilterKey, number>;
+  onChange: (key: FeedFilterKey) => void;
+}) {
+  const { c } = useTheme();
+
+  const options: { key: FeedFilterKey; label: string; icon: IconName }[] = [
+    { key: 'all', label: 'All', icon: 'folder' },
+    { key: 'private', label: 'Private', icon: 'lock' },
+    { key: 'public', label: 'Public stories', icon: 'globe' },
+  ];
+
+  return (
+    <View style={styles.filterRow} accessibilityRole="tablist">
+      {options.map((o) => {
+        const on = o.key === active;
+        return (
+          <Pressable
+            key={o.key}
+            onPress={() => {
+              if (!on) haptics.selected();
+              onChange(o.key);
+            }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            aria-selected={on}
+            accessibilityLabel={`${o.label}, ${counts[o.key]}`}
+            style={({ pressed }) => [
+              styles.filterPill,
+              {
+                backgroundColor: on ? c.inkButton : 'transparent',
+                borderColor: on ? c.inkButton : c.hairline,
+              },
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Icon
+              name={o.icon}
+              size={14}
+              color={on ? c.onInkButton : c.textMuted}
+            />
+            <Text variant="label" style={on ? { color: c.onInkButton } : undefined}>
+              {o.label}
+            </Text>
+            <Text
+              variant="label"
+              style={on ? { color: c.onInkButton, opacity: 0.7 } : { color: c.textMuted }}
+            >
+              {counts[o.key]}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}

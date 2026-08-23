@@ -132,6 +132,26 @@ export default function Invite() {
             What they will read
           </Text>
           <Text variant="body">{INVITE_PROMPT}</Text>
+
+          {/* Opening your own invite link.
+              Everything a contributor sees is deliberately different from what the
+              owner sees — no other contributors, no owner identity, no story unless
+              it has been approved and published. That asymmetry is the product's
+              central privacy claim, and until now the only way to check it was a
+              second phone. This opens the contributor's screen for the same token
+              this page is showing, so the claim can be verified rather than trusted. */}
+          <Button
+            label="Preview what they see"
+            variant="outline"
+            onPress={() =>
+              router.push({ pathname: '/contribute/[token]', params: { token: memory.inviteToken } })
+            }
+            accessibilityHint="Opens the contributor's view of this memory"
+          />
+          <Text variant="meta" tone="muted">
+            The contributor&apos;s screen, for this exact link. They never see who else
+            contributed, and the story only appears once you approve and publish it.
+          </Text>
         </View>
       </Card>
 
