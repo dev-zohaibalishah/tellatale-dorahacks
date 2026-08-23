@@ -165,8 +165,15 @@ export default function AddMemory() {
         style={styles.root}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* ------------------------------------------------------------ head */}
-        <View style={styles.head}>
+        {/* ------------------------------------------------------------ head
+            The top inset is applied here, not in the stylesheet.
+
+            This is the one screen in the app that does not go through `Screen` or
+            `TabScreen`, so nothing reserved room for the status bar — and
+            Android has been edge-to-edge by default since SDK 53, with Android 15
+            enforcing it outright. The close button and the title were being drawn
+            underneath the clock and the notification icons. */}
+        <View style={[styles.head, { paddingTop: insets.top + space.base }]}>
           <Pressable
             onPress={close}
             accessibilityRole="button"
@@ -534,7 +541,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: layout.gutter,
-    paddingTop: space.base,
+    // paddingTop is set inline from the safe-area inset; see the head block.
     paddingBottom: space.md,
   },
   closeDot: {

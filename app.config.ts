@@ -17,7 +17,24 @@ import type { ExpoConfig } from 'expo/config';
 const linkHost = process.env.EXPO_PUBLIC_LINK_HOST?.trim();
 
 const BUNDLE_ID = 'xyz.tellatale.app';
-const INK = '#10141C';
+
+/**
+ * Three different backgrounds, and they were all one colour by accident.
+ *
+ * `#10141C` is a leftover from the dark-first prototype the Figma replaced. It was
+ * still painting the Android window and the splash, while the app itself renders
+ * light — so launch went navy, then white, and any strip the app's own views had not
+ * covered yet showed navy behind them. On an edge-to-edge Android window that strip
+ * is exactly the status bar area.
+ *
+ * These must track `src/theme/tokens.ts`:
+ *   SURFACE  = palettes.light.ink   — the window and splash, because light is default
+ *   SURFACE_DARK = palettes.dark.ink — the splash when the system is in dark mode
+ *   ICON_INK stays navy: the adaptive icon art was drawn against it.
+ */
+const SURFACE = '#FFFFFF';
+const SURFACE_DARK = '#0E0E11';
+const ICON_INK = '#10141C';
 
 /**
  * The EAS project this app builds under.
@@ -42,7 +59,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   // No `newArchEnabled` here: the New Architecture is the default in SDK 57 and the
   // flag was dropped from the config type. Setting it is now a typecheck error.
-  backgroundColor: INK,
+  backgroundColor: SURFACE,
 
   ios: {
     supportsTablet: true,
@@ -60,7 +77,7 @@ const config: ExpoConfig = {
   android: {
     package: BUNDLE_ID,
     adaptiveIcon: {
-      backgroundColor: INK,
+      backgroundColor: ICON_INK,
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
@@ -111,8 +128,8 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
-        backgroundColor: INK,
-        dark: { backgroundColor: INK },
+        backgroundColor: SURFACE,
+        dark: { backgroundColor: SURFACE_DARK },
         image: './assets/splash-icon.png',
         imageWidth: 160,
       },

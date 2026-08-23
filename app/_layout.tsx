@@ -15,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 
 import { FeedbackProvider } from '../src/components/feedback';
 import { useNotificationRouting } from '../src/push/useNotificationRouting';
@@ -129,7 +129,14 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
+      {/* initialMetrics matters on Android specifically.
+
+          Without it the provider reports zero insets for the first frame and then
+          corrects itself, so every launch and every modal opened with content sitting
+          under the status bar before jumping down. The native module already knows
+          the real insets at startup; this hands them over synchronously instead of
+          waiting for a layout pass. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <ThemeProvider>
           {/* Inside ThemeProvider — the toast and confirm surfaces are themed. */}
           <FeedbackProvider>

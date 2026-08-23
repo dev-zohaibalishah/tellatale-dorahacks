@@ -37,6 +37,24 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
     })
   : null;
 
+/**
+ * The project this bundle is talking to — for showing a developer, never a user.
+ *
+ * `EXPO_PUBLIC_*` values are inlined into the JavaScript bundle when Metro builds it,
+ * not read at runtime. So editing `.env` changes nothing on a phone already connected
+ * to a running Metro: it keeps serving the bundle it built earlier, pointed at
+ * whatever project was configured then.
+ *
+ * That failure is invisible and it lies. Sign-in against the wrong project returns
+ * "Invalid login credentials" — the same thing a wrong password returns — so the app
+ * tells someone their password is wrong when the real answer is that it is asking a
+ * different database. Printing the ref on the auth screen in development makes the
+ * mismatch obvious in one glance.
+ */
+export const projectRef: string | null = url
+  ? (/^https:\/\/([^.]+)\.supabase\./.exec(url)?.[1] ?? url)
+  : null;
+
 export function requireSupabase(): SupabaseClient {
   if (!supabase) {
     throw new Error(

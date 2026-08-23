@@ -22,6 +22,7 @@ import { Row, Screen } from '../../src/components/layout';
 import { Text } from '../../src/components/Text';
 import { track } from '../../src/lib/analytics';
 import { useSession } from '../../src/state/auth';
+import { isSupabaseConfigured, projectRef } from '../../src/supabase/client';
 import { useTheme } from '../../src/state/theme';
 import { space } from '../../src/theme/tokens';
 
@@ -132,11 +133,33 @@ export default function SignIn() {
           discovery, and nothing is shared until you say so.
         </Text>
       </Row>
+
+      <BackendNote />
     </Screen>
   );
 }
 
+/**
+ * Development only. Says which backend this build is actually asking.
+ *
+ * A stale Metro bundle keeps the old project baked in, and the resulting sign-in
+ * failure is indistinguishable from a wrong password — the server returns the same
+ * message for both. One line here turns half an hour of doubting your own password
+ * into a glance. It is stripped from release builds by the `__DEV__` guard.
+ */
+function BackendNote() {
+  if (!__DEV__) return null;
+  return (
+    <Text variant="meta" tone="muted" center style={styles.backend}>
+      {isSupabaseConfigured
+        ? `dev · backend ${projectRef}`
+        : 'dev · no backend configured — this build runs on-device only'}
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
+  backend: { paddingTop: space.base, opacity: 0.7 },
   brand: { gap: space.sm, paddingTop: space.xxl },
   form: { gap: space.lg, paddingTop: space.lg },
   switchRow: { justifyContent: 'center' },
