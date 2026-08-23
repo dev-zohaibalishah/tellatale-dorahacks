@@ -79,9 +79,10 @@ It must stay verify_jwt: false — a contributor has no account. supabase/config
 already declares that; do not pass a flag that overrides it.
 
 Then check the gate holds. With one of my memories published, POST its token to
-/functions/v1/guest-memory and confirm the response has an  array. Set that
-memory back to private and POST again —  must be empty and no contributor
-name may appear anywhere in the payload. Show me both responses.
+/functions/v1/guest-memory and confirm the response has an "accounts" array holding
+the contributors. Set that memory back to private and POST again — "accounts" must be
+empty and no contributor name may appear anywhere in the payload. Show me both
+responses.
 
 ## Step 5 — Rebuild for dictation
 
