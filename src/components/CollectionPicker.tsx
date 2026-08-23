@@ -22,7 +22,7 @@ import { useToast } from './feedback';
 import { repository } from '../data';
 import type { Collection } from '../data/repository';
 import { useTheme } from '../state/theme';
-import { layout, radius, space } from '../theme/tokens';
+import { radius, space } from '../theme/tokens';
 
 export function CollectionPicker({
   memoryId,

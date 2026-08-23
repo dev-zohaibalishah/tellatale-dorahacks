@@ -21,9 +21,22 @@ export function buildInviteUrl(token: string): string {
   return Linking.createURL(`/contribute/${token}`);
 }
 
-export function buildStoryUrl(memoryId: string): string {
-  if (host) return `https://${host}/s/${memoryId}`;
-  return Linking.createURL(`/story/${memoryId}`);
+/**
+ * The link to a published story — which is the same link as the invite, deliberately.
+ *
+ * It used to be `/s/<memoryId>`, and that was dead in two independent ways. There is
+ * no `/story/[id]` route in the app, so it 404'd on the way in; and even with one, a
+ * memory id is not a credential — a recipient has no account, and RLS would refuse to
+ * read the row. Everything a person without an account can see comes through the
+ * invite token and the `guest-memory` function that resolves it server-side.
+ *
+ * The contributor screen already shows the published story once the owner approves and
+ * publishes it, so one token serves both halves of the loop: come and add what you
+ * remember, then come back and read what everyone remembered. One link, one landing
+ * page, one thing that can break.
+ */
+export function buildStoryUrl(inviteToken: string): string {
+  return buildInviteUrl(inviteToken);
 }
 
 /** Verbatim invitation copy from the MVP spec §2. Do not paraphrase. */

@@ -50,7 +50,7 @@ export default function Story() {
   const { data: memory, loading: memoryLoading } = useMemory(id);
   const { data: story, loading: storyLoading } = useStory(id);
   const { data: remarks } = useRemarks(id);
-  const imageUrl = useImageUrl(memory?.imagePath);
+  const { url: imageUrl, failed: imageFailed } = useImageUrl(memory?.imagePath);
 
   const cardRef = useRef<View>(null);
   const [busy, setBusy] = useState<null | 'compose' | 'approve' | 'share'>(null);
@@ -88,7 +88,9 @@ export default function Story() {
 
   const approved = Boolean(story?.approvedAt);
   const published = approved && memory.visibility === 'public';
-  const shareUrl = buildStoryUrl(memory.id);
+  // The invite token, not the memory id: the recipient has no account, so the
+  // token is the only thing that can open anything for them.
+  const shareUrl = buildStoryUrl(memory.inviteToken);
   const shareMessage = `${story?.ownerEditedTitle ?? story?.title ?? memory.title}`;
 
   async function compose() {
@@ -260,6 +262,7 @@ export default function Story() {
         story={story}
         memoryType={memory.memoryType}
         imageUrl={imageUrl}
+        imageFailed={imageFailed}
         dateHint={memory.dateHint}
         locationHint={memory.locationHint}
         contributorCount={story.familyPerspectives.length + 1}

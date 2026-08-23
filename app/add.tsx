@@ -383,7 +383,7 @@ function SegmentButton({
   active: boolean;
   onPress: () => void;
 }) {
-  const { c, name } = useTheme();
+  const { c } = useTheme();
   return (
     <Pressable
       onPress={() => {

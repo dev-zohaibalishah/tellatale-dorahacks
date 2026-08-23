@@ -38,13 +38,10 @@ export function TabBar({
   active,
   onSelect,
   onAdd,
-  /** The signed-in person's avatar, shown in place of the "Me" glyph. */
-  avatarUri,
 }: {
   active: TabKey;
   onSelect: (key: TabKey) => void;
   onAdd: () => void;
-  avatarUri?: string | null;
 }) {
   const { c, name } = useTheme();
   const insets = useSafeAreaInsets();

@@ -14,7 +14,7 @@
  */
 
 import { Image, type ImageContentFit } from 'expo-image';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Icon } from './icons';
@@ -25,6 +25,7 @@ import { radius, space } from '../theme/tokens';
 
 export function PhotoPlate({
   uri,
+  failed: resolveFailed = false,
   aspect = 4 / 3,
   contentFit = 'cover',
   rounded = true,
@@ -32,6 +33,8 @@ export function PhotoPlate({
   accessibilityLabel = 'The photograph this memory is built around',
 }: {
   uri: string | null;
+  /** Set when resolving the URL itself failed, as opposed to still being in flight. */
+  failed?: boolean;
   aspect?: number;
   contentFit?: ImageContentFit;
   rounded?: boolean;
@@ -39,9 +42,24 @@ export function PhotoPlate({
   accessibilityLabel?: string;
 }) {
   const { c } = useTheme();
-  const [state, setState] = useState<'loading' | 'ready' | 'failed'>(
-    uri ? 'loading' : 'failed'
-  );
+
+  /**
+   * Loading, always, until an actual load resolves it.
+   *
+   * The previous version seeded this from `uri` — and every caller passes
+   * `useImageUrl(...)`, which is null on the first render while the signed URL is
+   * being minted. So every photo in the app mounted straight into `failed`, showed
+   * "No photo yet", then "This image could not be loaded" once the URL arrived, and
+   * only reached the photograph if `onLoad` happened to fire. A state seeded from a
+   * prop that is known to arrive late cannot be a `useState` initialiser: that runs
+   * once, on mount, at the exact moment the prop is guaranteed to be wrong.
+   */
+  const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
+
+  // A new URI is a new load — including a re-minted signed URL for the same photo.
+  useEffect(() => {
+    setState('loading');
+  }, [uri]);
 
   const frame: ViewStyle = {
     aspectRatio: aspect,
@@ -68,13 +86,15 @@ export function PhotoPlate({
         />
       ) : null}
 
-      {state === 'loading' ? <Skeleton style={StyleSheet.absoluteFill} /> : null}
+      {state === 'loading' && !resolveFailed ? (
+        <Skeleton style={StyleSheet.absoluteFill} />
+      ) : null}
 
-      {state === 'failed' ? (
+      {state === 'failed' || resolveFailed ? (
         <View style={styles.fallback}>
           <Icon name="image" size={28} color={c.textMuted} />
           <Text variant="meta" tone="muted" center>
-            {uri ? 'This image could not be loaded.' : 'No photo yet'}
+            This image could not be loaded.
           </Text>
         </View>
       ) : null}

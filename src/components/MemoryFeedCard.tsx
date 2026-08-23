@@ -14,39 +14,36 @@ import { Avatar, AvatarStack } from './home-ui';
 import { Icon } from './icons';
 import { PhotoPlate } from './PhotoPlate';
 import { Text } from './Text';
-import * as haptics from '../lib/haptics';
 import { useTheme } from '../state/theme';
 import { radius, space } from '../theme/tokens';
 
 export interface FeedCardProps {
   title: string;
   imageUrl: string | null;
+  /** True when resolving the image URL failed, so the card can say so. */
+  imageFailed?: boolean;
   /** Already formatted — "Aug 1994", "1979", "Sometime in the 1980s". */
   when?: string | null;
   where?: string | null;
   authorName: string;
   authorAvatar?: string | null;
   contributors: { uri?: string | null; name?: string | null }[];
-  likes: number;
-  comments: number;
-  liked?: boolean;
+  /** How many people have added their side. Not a comment count — there are none. */
+  contributorCount: number;
   onPress: () => void;
-  onToggleLike?: () => void;
 }
 
 export function MemoryFeedCard({
   title,
   imageUrl,
+  imageFailed,
   when,
   where,
   authorName,
   authorAvatar,
   contributors,
-  likes,
-  comments,
-  liked,
+  contributorCount,
   onPress,
-  onToggleLike,
 }: FeedCardProps) {
   const { c } = useTheme();
   const remembering = contributors.length;
@@ -60,7 +57,13 @@ export function MemoryFeedCard({
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.94 }]}
     >
       <View style={styles.plate}>
-        <PhotoPlate uri={imageUrl} aspect={4 / 3} rounded accessibilityLabel={`Photo for ${title}`} />
+        <PhotoPlate
+          uri={imageUrl}
+          failed={imageFailed}
+          aspect={4 / 3}
+          rounded
+          accessibilityLabel={`Photo for ${title}`}
+        />
 
         {remembering > 1 ? (
           <View style={[styles.badge, { backgroundColor: c.surface }]}>
@@ -68,18 +71,6 @@ export function MemoryFeedCard({
           </View>
         ) : null}
 
-        <Pressable
-          onPress={() => {
-            haptics.selected();
-            onToggleLike?.();
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={liked ? 'Remove your heart' : 'Heart this memory'}
-          hitSlop={10}
-          style={styles.heart}
-        >
-          <Icon name="heart" size={22} color={liked ? c.accent : '#FFFFFF'} filled={liked} />
-        </Pressable>
       </View>
 
       <View style={styles.body}>
@@ -119,16 +110,16 @@ export function MemoryFeedCard({
             {authorName}
           </Text>
 
+          {/* The design has a heart and a comment count here. Neither exists: the
+              MVP spec rules out likes, feeds and comment threads, and nothing in the
+              schema stores either. A heart that only plays a haptic and a zero that
+              can never move are worse than the space they fill — so the slot carries
+              the one social number this product actually has, which is also the only
+              one it cares about. */}
           <View style={styles.count}>
-            <Icon name="heart" size={15} color={c.textMuted} />
+            <Icon name="people" size={15} color={c.textMuted} />
             <Text variant="label" tone="muted">
-              {likes}
-            </Text>
-          </View>
-          <View style={styles.count}>
-            <Icon name="comment" size={15} color={c.textMuted} />
-            <Text variant="label" tone="muted">
-              {comments}
+              {contributorCount}
             </Text>
           </View>
         </View>
@@ -147,15 +138,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
-  },
-  heart: {
-    position: 'absolute',
-    top: space.md,
-    right: space.md,
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   body: { gap: space.sm },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },

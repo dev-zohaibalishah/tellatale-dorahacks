@@ -4,23 +4,13 @@
     {
       "name": "tellatale-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "expo",
-        "start",
-        "--web",
-        "--port",
-        "8081"
-      ],
-      "port": 8081
+      "runtimeArgs": ["expo", "start", "--web"],
+      "autoPort": true
     },
     {
       "name": "tellatale-web-alt",
       "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "expo",
-        "start",
-        "--web"
-      ],
+      "runtimeArgs": ["expo", "start", "--web"],
       "autoPort": true
     }
   ]

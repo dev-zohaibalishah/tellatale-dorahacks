@@ -13,7 +13,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Skeleton } from '../src/components/chrome';
-import { Avatar, SectionRow } from '../src/components/home-ui';
+import { SectionRow } from '../src/components/home-ui';
 import { EmptyState } from '../src/components/layout';
 import { PhotoPlate } from '../src/components/PhotoPlate';
 import { TabScreen } from '../src/components/TabScreen';
@@ -40,6 +40,7 @@ function decadeLabel(year: number): string {
 
 export default function Explore() {
   const { uid } = useSession();
+  const { c } = useTheme();
   const { data: memories, loading } = useMemories(uid);
   const [tab, setTab] = useState<Tab>('timeline');
 
@@ -78,7 +79,7 @@ export default function Explore() {
       <View style={styles.tabs}>
         <TabLink label="Timeline" active={tab === 'timeline'} onPress={() => setTab('timeline')} />
         <TabLink
-          label="People &amp; Places"
+          label="People & Places"
           active={tab === 'people'}
           onPress={() => setTab('people')}
         />
@@ -125,7 +126,10 @@ export default function Explore() {
           ) : (
             <View style={styles.placeWrap}>
               {places.map(([place, count]) => (
-                <View key={place} style={styles.placeChip}>
+                <View
+                  key={place}
+                  style={[styles.placeChip, { backgroundColor: c.surfaceRaised }]}
+                >
                   <Text variant="ui">{place}</Text>
                   <Text variant="label" tone="muted">
                     {count}
@@ -178,7 +182,7 @@ function TabLink({
 
 function Thumb({ memory }: { memory: Memory }) {
   const router = useRouter();
-  const url = useImageUrl(memory.imagePath);
+  const { url, failed } = useImageUrl(memory.imagePath);
 
   return (
     <Pressable
@@ -187,7 +191,7 @@ function Thumb({ memory }: { memory: Memory }) {
       accessibilityLabel={memory.title}
       style={({ pressed }) => [styles.thumb, pressed && { opacity: 0.85 }]}
     >
-      <PhotoPlate uri={url} aspect={1} rounded accessibilityLabel={memory.title} />
+      <PhotoPlate uri={url} failed={failed} aspect={1} rounded accessibilityLabel={memory.title} />
     </Pressable>
   );
 }
@@ -208,6 +212,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.base,
     minHeight: 40,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(0,0,0,0.04)',
   },
 });

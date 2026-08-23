@@ -39,6 +39,8 @@ export interface StoryCardProps {
   story: StoryDoc;
   memoryType: MemoryType;
   imageUrl: string | null;
+  /** True when resolving the image URL failed, as opposed to still loading. */
+  imageFailed?: boolean;
   dateHint?: string | null;
   locationHint?: string | null;
   contributorCount: number;
@@ -50,7 +52,7 @@ export interface StoryCardProps {
  * image on Android.
  */
 export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
-  { story, memoryType, imageUrl, dateHint, locationHint, contributorCount },
+  { story, memoryType, imageUrl, imageFailed, dateHint, locationHint, contributorCount },
   ref
 ) {
   const { c, elevation } = useTheme();
@@ -73,7 +75,7 @@ export const StoryCard = forwardRef<View, StoryCardProps>(function StoryCard(
         elevation,
       ]}
     >
-      <PhotoPlate uri={imageUrl} aspect={4 / 3} rounded={false} />
+      <PhotoPlate uri={imageUrl} failed={imageFailed} aspect={4 / 3} rounded={false} />
 
       <View style={styles.body}>
         <View style={styles.titleBlock}>

@@ -13,7 +13,7 @@
  * boundary, it is the presentation of it.
  */
 
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -46,7 +46,6 @@ const CERTAINTY_CHOICES = Certainty.options.map((value) => ({
 
 export default function Contribute() {
   const { token } = useLocalSearchParams<{ token: string }>();
-  const router = useRouter();
   const toast = useToast();
   const { data: view, loading, error, reload } = useGuestMemory(token);
 
@@ -104,6 +103,18 @@ export default function Contribute() {
         locationHint: locationHint.trim() || null,
       });
       track({ name: 'remark_added', certainty });
+      // Clear what was just sent, keep who sent it.
+      //
+      // Without this, "Add another memory" handed the contributor back a form
+      // already full of the words they had just submitted — one more tap away from
+      // posting the same remark twice, under the same name, to the same photo.
+      // Their name and relationship stay, because those do not change between two
+      // memories of the same afternoon.
+      setText('');
+      setDateHint('');
+      setLocationHint('');
+      setCertainty('certain');
+      setMore(false);
       setDone(true);
       reload();
     } catch (e) {

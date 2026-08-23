@@ -14,7 +14,6 @@ import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button } from '../src/components/Button';
 import { useConfirm } from '../src/components/feedback';
 import { Avatar } from '../src/components/home-ui';
 import { Icon, type IconName } from '../src/components/icons';

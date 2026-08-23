@@ -12,7 +12,7 @@
 
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Skeleton } from '../src/components/chrome';
@@ -54,7 +54,18 @@ export default function Notifications() {
         <Text variant="heading">Notifications</Text>
       </View>
 
-      <View style={styles.list}>
+      {/* Scrollable, and it was not.
+          The list lived in a plain View inside a flex:1 root, so once a person had
+          more notifications than fit the screen the rest were simply unreachable —
+          and the "you're all caught up" line at the bottom was unreachable with
+          them. An inbox that cannot be scrolled to the end is not an inbox. */}
+      <ScrollView
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: insets.bottom + space.xl },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? (
           <Skeleton height={72} />
         ) : events.length === 0 ? (
@@ -86,11 +97,11 @@ export default function Notifications() {
             </View>
           ))
         )}
-      </View>
 
-      <Text variant="meta" tone="muted" center style={styles.foot}>
-        You&apos;re all caught up · max 10 a week
-      </Text>
+        <Text variant="meta" tone="muted" center style={styles.foot}>
+          You&apos;re all caught up · max 10 a week
+        </Text>
+      </ScrollView>
     </View>
   );
 }

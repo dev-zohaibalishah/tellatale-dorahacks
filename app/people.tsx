@@ -12,7 +12,8 @@
  * to invent data.
  */
 
-import React, { useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '../src/components/Button';
@@ -25,13 +26,16 @@ import { Text } from '../src/components/Text';
 import { useMemories } from '../src/hooks/repo';
 import * as haptics from '../src/lib/haptics';
 import { useSession } from '../src/state/auth';
+import { nameFor, useProfile } from '../src/state/profile';
 import { useTheme } from '../src/state/theme';
 import { radius, space } from '../src/theme/tokens';
 
 type Tab = 'tagged' | 'inApp';
 
 export default function People() {
-  const { uid, displayName, username } = useSession();
+  const router = useRouter();
+  const { uid } = useSession();
+  const { profile, avatarUrl } = useProfile();
   const { data: memories, loading } = useMemories(uid);
   const { c } = useTheme();
   const [tab, setTab] = useState<Tab>('tagged');
@@ -41,15 +45,31 @@ export default function People() {
     [memories]
   );
 
+  /**
+   * Inviting is per-memory, because a contribution is always about one photograph.
+   * So "invite someone" means "pick a memory to invite them to" — and when there is
+   * an obvious one, skip the picking. `useMemories` sorts newest first, so the most
+   * recent memory is the one they were most likely just looking at.
+   */
+  const inviteSomeone = useCallback(() => {
+    const newest = memories[0];
+    if (newest) {
+      router.push({ pathname: '/memory/[id]/invite', params: { id: newest.id } });
+    } else {
+      // Nothing to invite anyone to yet. Sending them to an empty picker would be a
+      // dead end; sending them to the composer is the actual next step.
+      router.push('/add');
+    }
+  }, [memories, router]);
+
   return (
     <TabScreen active="people">
+      {/* The design has a search control here. There is nothing to search: the only
+          name this screen can state truthfully is the account holder's, because face
+          tagging is not in the schema. A magnifier that opens nothing is a promise
+          the screen cannot keep, so it is not drawn. */}
       <View style={styles.head}>
         <Text variant="title">People</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Search people" hitSlop={8}>
-          <View style={[styles.searchDot, { backgroundColor: c.surfaceRaised }]}>
-            <Icon name="search" size={17} color={c.text} />
-          </View>
-        </Pressable>
       </View>
 
       <View style={styles.tabs}>
@@ -69,20 +89,24 @@ export default function People() {
               this screen can name truthfully is the account holder. */}
           <View style={styles.grid}>
             <PersonTile
-              name={displayName ?? username ?? 'You'}
+              name={nameFor(profile)}
+              avatarUri={avatarUrl}
               relation="You"
               count={memories.length}
             />
+            {/* Was a dead tile: rendered as a button, wired to nothing. The one
+                honest way to "add a person" today is to invite them to a memory. */}
             <Pressable
+              onPress={inviteSomeone}
               accessibilityRole="button"
-              accessibilityLabel="Add person"
-              style={styles.tile}
+              accessibilityLabel="Invite someone to a memory"
+              style={({ pressed }) => [styles.tile, pressed && { opacity: 0.8 }]}
             >
               <View style={[styles.addCircle, { borderColor: c.hairline }]}>
                 <Icon name="plus" size={22} color={c.textMuted} />
               </View>
               <Text variant="label" tone="muted">
-                Add person
+                Invite someone
               </Text>
             </Pressable>
           </View>
@@ -110,7 +134,7 @@ export default function People() {
                   : 'From people you invited'}
               </Text>
             </View>
-            <Button label="Invite" size="compact" onPress={() => { /* per-memory invite */ }} />
+            <Button label="Invite" size="compact" onPress={inviteSomeone} />
           </View>
 
           <EmptyState
@@ -124,16 +148,18 @@ export default function People() {
 
 function PersonTile({
   name,
+  avatarUri,
   relation,
   count,
 }: {
   name: string;
+  avatarUri?: string | null;
   relation: string;
   count: number;
 }) {
   return (
     <View style={styles.tile}>
-      <Avatar name={name} size={72} />
+      <Avatar uri={avatarUri} name={name} size={72} />
       <Text variant="heading">{name}</Text>
       <Text variant="label" tone="muted">
         {relation}
@@ -175,13 +201,6 @@ function TabLink({
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  searchDot: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.avatar,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   tabs: { flexDirection: 'row', gap: space.lg },
   tabLink: { paddingBottom: space.sm, borderBottomWidth: 2, borderBottomColor: 'transparent' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space.lg, columnGap: space.base },

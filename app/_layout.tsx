@@ -97,7 +97,6 @@ function Shell() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="create" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="collection/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="memory/[id]/index" />
         <Stack.Screen name="memory/[id]/invite" options={{ presentation: 'modal' }} />

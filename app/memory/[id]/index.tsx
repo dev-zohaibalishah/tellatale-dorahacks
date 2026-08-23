@@ -52,9 +52,9 @@ export default function MemoryPage() {
   const { uid } = useSession();
 
   const { data: memory, loading, error, reload } = useMemory(id);
-  const { data: remarks } = useRemarks(id);
+  const { data: remarks, loading: remarksLoading } = useRemarks(id);
   const { data: story } = useStory(id);
-  const imageUrl = useImageUrl(memory?.imagePath);
+  const { url: imageUrl, failed: imageFailed } = useImageUrl(memory?.imagePath);
 
   const [composing, setComposing] = useState(false);
 
@@ -117,7 +117,15 @@ export default function MemoryPage() {
       destructive: true,
     });
     if (!ok) return;
-    await repository().deleteMemory(id);
+    try {
+      await repository().deleteMemory(id);
+    } catch (e) {
+      // Without this the promise rejected into nothing: the confirm dialog closed,
+      // the memory stayed, and the owner was told neither that it worked nor that
+      // it had not.
+      toast(e instanceof Error ? e.message : 'That could not be deleted.', 'bad');
+      return;
+    }
     toast('Memory deleted.');
     router.replace('/');
   }
@@ -181,7 +189,7 @@ export default function MemoryPage() {
         }
       />
 
-      <PhotoPlate uri={imageUrl} aspect={4 / 3} />
+      <PhotoPlate uri={imageUrl} failed={imageFailed} aspect={4 / 3} />
 
       <View style={styles.titleBlock}>
         <Text variant="display">{memory.title}</Text>
@@ -270,7 +278,12 @@ export default function MemoryPage() {
         }
       />
 
-      {remarks.length === 0 ? (
+      {remarksLoading ? (
+        // "Nobody has added anything" is the most demoralising sentence on this page
+        // and it was being shown to every owner, every visit, for as long as the
+        // remarks took to arrive — including to owners who had contributions waiting.
+        <Skeleton height={96} />
+      ) : remarks.length === 0 ? (
         <EmptyState
           line="Nothing yet. A memory becomes a story when someone else adds what they remember."
           action={
@@ -289,8 +302,18 @@ export default function MemoryPage() {
             <RemarkCard
               key={remark.id}
               remark={remark}
-              onToggleInclude={(next) => {
-                void repository().setRemarkIncluded(memory.id, remark.id, next);
+              onToggleInclude={async (next) => {
+                try {
+                  await repository().setRemarkIncluded(memory.id, remark.id, next);
+                } catch (e) {
+                  // This was fire-and-forget. A failed write left the switch showing
+                  // the owner a decision the story would not honour — and they would
+                  // only find out by reading a composed story missing someone.
+                  toast(
+                    e instanceof Error ? e.message : 'That change could not be saved.',
+                    'bad'
+                  );
+                }
               }}
               onDelete={async () => {
                 const ok = await confirm({
@@ -300,8 +323,12 @@ export default function MemoryPage() {
                   destructive: true,
                 });
                 if (!ok) return;
-                await repository().deleteRemark(memory.id, remark.id);
-                toast('Removed.');
+                try {
+                  await repository().deleteRemark(memory.id, remark.id);
+                  toast('Removed.');
+                } catch (e) {
+                  toast(e instanceof Error ? e.message : 'That could not be removed.', 'bad');
+                }
               }}
             />
           ))}
@@ -325,7 +352,19 @@ export default function MemoryPage() {
           disabled={!memory.storyApprovedAt}
           disabledReason="Approve the story first, then you can publish it."
           onChange={async (next) => {
-            await repository().setVisibility(memory.id, next ? 'public' : 'private');
+            try {
+              await repository().setVisibility(memory.id, next ? 'public' : 'private');
+            } catch (e) {
+              // Publishing is the highest-stakes switch in the app. Failing it
+              // silently could leave an owner believing a story is private when the
+              // write never landed — or the reverse.
+              toast(
+                e instanceof Error ? e.message : 'That could not be changed.',
+                'bad'
+              );
+              reload();
+              return;
+            }
             // The memory doc is fetched rather than watched, so the switch would
             // otherwise keep saying "Private" after a successful write.
             reload();

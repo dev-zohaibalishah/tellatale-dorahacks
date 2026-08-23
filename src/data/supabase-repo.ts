@@ -451,12 +451,17 @@ export function createSupabaseRepository(): Repository {
       const { error } = await requireSupabase()
         .from('remarks')
         .update({ included })
-        .eq('id', remarkId);
+        .eq('id', remarkId)
+        .eq('memory_id', memoryId);
       if (error) throw new Error(error.message);
     },
 
     async deleteRemark(memoryId, remarkId) {
-      const { error } = await requireSupabase().from('remarks').delete().eq('id', remarkId);
+      const { error } = await requireSupabase()
+        .from('remarks')
+        .delete()
+        .eq('id', remarkId)
+        .eq('memory_id', memoryId);
       if (error) throw new Error(error.message);
     },
 

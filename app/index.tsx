@@ -21,7 +21,6 @@ import { Skeleton } from '../src/components/chrome';
 import {
   Avatar,
   ComposeBar,
-  QuestionCard,
   SectionRow,
   TodoChip,
 } from '../src/components/home-ui';
@@ -206,7 +205,7 @@ export default function Home() {
 /** Split out so each card can resolve its own signed image URL. */
 function FeedRow({ memory, authorName }: { memory: Memory; authorName: string }) {
   const router = useRouter();
-  const url = useImageUrl(memory.imagePath);
+  const { url, failed } = useImageUrl(memory.imagePath);
 
   // The design shows contributor avatars. Remarks are not loaded on this screen, so
   // the count drives how many placeholders appear rather than inventing identities.
@@ -218,12 +217,12 @@ function FeedRow({ memory, authorName }: { memory: Memory; authorName: string })
     <MemoryFeedCard
       title={memory.title}
       imageUrl={url}
+      imageFailed={failed}
       when={formatWhen(memory)}
       where={memory.locationHint}
       authorName={authorName}
       contributors={contributors}
-      likes={0}
-      comments={memory.contributorCount}
+      contributorCount={memory.contributorCount}
       onPress={() => router.push({ pathname: '/memory/[id]', params: { id: memory.id } })}
     />
   );

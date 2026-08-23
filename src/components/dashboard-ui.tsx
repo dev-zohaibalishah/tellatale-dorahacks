@@ -12,7 +12,6 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { Icon, type IconName } from './icons';
 import { Text } from './Text';
-import { Row } from './layout';
 import { useTheme } from '../state/theme';
 import { fonts, type as scale } from '../theme/typography';
 import { layout, radius, space } from '../theme/tokens';
