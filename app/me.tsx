@@ -172,6 +172,12 @@ export default function Me() {
         </Text>
         <View style={styles.rows}>
           <Row
+            icon="inbox"
+            title="Shared with me"
+            note="Memories other people own that you added to"
+            onPress={() => router.push('/shared')}
+          />
+          <Row
             icon="user"
             title="Edit profile"
             note="Picture, display name, and where you are"

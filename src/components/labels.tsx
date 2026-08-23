@@ -10,10 +10,17 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { type IconName } from './icons';
 import { Text } from './Text';
 import { useTheme } from '../state/theme';
 import { radius, space } from '../theme/tokens';
-import { certaintyLabel, type Certainty, type SourceLabel, sourceLabelText } from '../../shared/story';
+import {
+  certaintyLabel,
+  type Certainty,
+  type MemoryType,
+  type SourceLabel,
+  sourceLabelText,
+} from '../../shared/story';
 
 export function SourceChip({ source }: { source: SourceLabel }) {
   const { c } = useTheme();
@@ -101,3 +108,23 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
 });
+
+/* ------------------------------------------------------- collection icons */
+
+/**
+ * The glyph a collection wears, by kind. Lives here rather than in a dashboard
+ * module because it is a label rule, and the dashboard it was written for no longer
+ * exists.
+ */
+const KIND_ICON: Record<MemoryType, IconName> = {
+  family: 'user',
+  friendship: 'star',
+  travel: 'globe',
+  celebration: 'star',
+  community: 'globe',
+  work: 'link',
+};
+
+export function collectionIcon(kind: MemoryType): IconName {
+  return KIND_ICON[kind];
+}

@@ -13,7 +13,7 @@ import { StyleSheet, View } from 'react-native';
 import { AuthError, AuthField } from '../../src/components/auth-ui';
 import { Button } from '../../src/components/Button';
 import { ActionBar, Header } from '../../src/components/chrome';
-import { collectionIcon } from '../../src/components/dashboard-ui';
+import { collectionIcon } from '../../src/components/labels';
 import { useToast } from '../../src/components/feedback';
 import { ChoiceRow } from '../../src/components/form';
 import { Icon } from '../../src/components/icons';

@@ -17,7 +17,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from './icons';
 import { Text } from './Text';
 import { Row } from './layout';
-import { collectionIcon } from './dashboard-ui';
+import { collectionIcon } from './labels';
 import { useToast } from './feedback';
 import { repository } from '../data';
 import type { Collection } from '../data/repository';
