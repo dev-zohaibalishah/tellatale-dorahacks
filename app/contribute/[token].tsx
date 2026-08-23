@@ -1,67 +1,60 @@
 /**
- * The guest screen — reached from an invite link, with no account.
+ * Opening a memory from a link — the highest-leverage screen in the product.
  *
- * This is the highest-leverage screen in the product. Every extra field, every sign-in
- * wall, every explanation costs contributions, and contributions are the only thing
- * that makes a memory more than a caption. So: the photo, the question, a name, and a
- * box to write in. Certainty and the date/place hints are optional and presented as
- * optional.
+ * Two shapes, and which one a person gets is the owner's decision, not a setting:
  *
- * The guest is deliberately shown less than the owner: no other contributors, no
- * remark list, no owner identity, and no story unless the owner has both approved and
- * published it. That withholding is enforced server-side too — this screen is not the
- * boundary, it is the presentation of it.
+ *   Not published — the photo and the question, nothing else. Someone holding a link
+ *   must not be able to read what the family has said in private, and that boundary is
+ *   enforced on the server: `guest-memory` returns no accounts until the owner has both
+ *   approved and published.
+ *
+ *   Published — the woven story, then every account it was woven from, each still in
+ *   its author's words. The story already names these people and quotes their
+ *   disagreements out loud ("Sara remembers it as 1994; Abbu places it a year
+ *   earlier"), so showing the originals underneath reveals nothing it has not already
+ *   said — and it is the difference between reading a summary about your family and
+ *   reading your family.
+ *
+ * Either way the invitation is the same and always reachable: I remember this too.
+ * Nothing here asks anyone to make an account.
  */
 
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AddYourSide } from '../../src/components/AddYourSide';
 import { Button } from '../../src/components/Button';
-import { ActionBar, Header, Loading } from '../../src/components/chrome';
+import { Loading } from '../../src/components/chrome';
 import { useToast } from '../../src/components/feedback';
-import { ChoiceRow, Field } from '../../src/components/form';
-import { Icon } from '../../src/components/icons';
-import { Card, Divider, Row, Screen } from '../../src/components/layout';
+import { Avatar } from '../../src/components/home-ui';
+import { Icon, type IconName } from '../../src/components/icons';
+import { CertaintyChip } from '../../src/components/labels';
+import { EmptyState, Screen } from '../../src/components/layout';
 import { PhotoPlate } from '../../src/components/PhotoPlate';
-import { StoryCard } from '../../src/components/StoryCard';
 import { Text } from '../../src/components/Text';
 import { repository } from '../../src/data';
 import { useGuestMemory } from '../../src/hooks/repo';
 import { track } from '../../src/lib/analytics';
+import * as haptics from '../../src/lib/haptics';
 import { GUEST_QUESTION } from '../../src/lib/links';
+import { shareLink } from '../../src/lib/share';
 import { useTheme } from '../../src/state/theme';
-import { radius, space } from '../../src/theme/tokens';
-import {
-  Certainty,
-  certaintyLabel,
-  Reaction,
-  reactionLabel,
-} from '../../shared/story';
-
-const CERTAINTY_CHOICES = Certainty.options.map((value) => ({
-  value,
-  label: certaintyLabel[value],
-}));
+import { layout, radius, space } from '../../src/theme/tokens';
 
 export default function Contribute() {
   const { token } = useLocalSearchParams<{ token: string }>();
+  const router = useRouter();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
+  const { c } = useTheme();
   const { data: view, loading, error, reload } = useGuestMemory(token);
 
-  const [name, setName] = useState('');
-  const [relationship, setRelationship] = useState('');
-  const [text, setText] = useState('');
-  const [certainty, setCertainty] = useState<Certainty>('certain');
-  const [dateHint, setDateHint] = useState('');
-  const [locationHint, setLocationHint] = useState('');
-  const [more, setMore] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [done, setDone] = useState(false);
-  const [reacted, setReacted] = useState<Reaction | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [hearted, setHearted] = useState(false);
+  const [thanked, setThanked] = useState(false);
 
-  // The denominator for invite-to-contribution conversion. Fired once per opened
-  // link, before anything is typed.
   useEffect(() => {
     if (!view) return;
     track({ name: 'invite_opened' });
@@ -79,304 +72,351 @@ export default function Contribute() {
   if (error || !view) {
     return (
       <Screen>
-        <Header eyebrow="Invite" title="This link does not work" />
-        <Text variant="body" tone="muted">
-          {error ?? 'It may have expired, or the memory may have been deleted.'}
-        </Text>
-        <Button label="Try again" variant="outline" onPress={reload} />
+        <View style={styles.notFound}>
+          <Text variant="eyebrow" tone="muted">
+            Invite
+          </Text>
+          <Text variant="display">This link does not work</Text>
+          <Text variant="body" tone="muted">
+            {error ?? 'It may have expired, or the memory may have been deleted.'}
+          </Text>
+          <Button label="Try again" variant="outline" onPress={reload} />
+        </View>
       </Screen>
     );
   }
 
-  const valid = name.trim().length > 0 && text.trim().length > 0;
+  const story = view.publishedStory;
+  const woven = story?.ownerEditedStory ?? story?.story ?? null;
 
-  async function submit() {
-    if (!token || !valid) return;
-    setSending(true);
-    try {
-      await repository().submitGuestRemark(token, {
-        contributorName: name.trim(),
-        relationship: relationship.trim() || null,
-        text: text.trim(),
-        certainty,
-        dateHint: dateHint.trim() || null,
-        locationHint: locationHint.trim() || null,
-      });
-      track({ name: 'remark_added', certainty });
-      // Clear what was just sent, keep who sent it.
-      //
-      // Without this, "Add another memory" handed the contributor back a form
-      // already full of the words they had just submitted — one more tap away from
-      // posting the same remark twice, under the same name, to the same photo.
-      // Their name and relationship stay, because those do not change between two
-      // memories of the same afternoon.
-      setText('');
-      setDateHint('');
-      setLocationHint('');
-      setCertainty('certain');
-      setMore(false);
-      setDone(true);
-      reload();
-    } catch (e) {
-      toast(e instanceof Error ? e.message : 'That could not be sent.', 'bad');
-    } finally {
-      setSending(false);
-    }
-  }
+  /**
+   * How many accounts the story was actually woven from — which is not the same as
+   * how many are listed below it.
+   *
+   * The moment someone adds theirs, the list grows and the narrative does not: it was
+   * composed before they wrote. Counting the list would credit the story with an
+   * account it has never read, and the first person to notice would be the
+   * contributor themselves, looking for their own words in a paragraph that cannot
+   * contain them. So the story reports its own sources, and anything newer is named
+   * as newer.
+   */
+  const wovenFrom = story?.sourceRemarkIds.length ?? 0;
+  const addedSince = Math.max(0, view.accounts.length - wovenFrom);
 
-  async function react(reaction: Reaction) {
-    if (!token) return;
+  /**
+   * The heart is a reaction, not a like.
+   *
+   * `broughtBack` — "That brought back a memory" — is one of the three reactions the
+   * MVP spec allows, it is already in the schema, and the endpoint already refuses it
+   * on an unpublished story. A heart backed by nothing would be a decoration that
+   * teaches people their tap did something.
+   */
+  async function heart() {
+    if (hearted || !token || !story) return;
+    setHearted(true);
+    haptics.contributed();
     try {
-      await repository().addReaction(token, reaction);
-      setReacted(reaction);
-      track({ name: 'reaction', reaction });
-      if (reaction === 'wantToAdd') {
-        // The one reaction that is really a request. Give them the form back rather
-        // than thanking them and stopping.
-        setDone(false);
-        setText('');
-        toast('Go ahead — add another.', 'good');
-      }
+      await repository().addReaction(token, 'broughtBack');
+      track({ name: 'reaction', reaction: 'broughtBack' });
     } catch (e) {
+      setHearted(false);
       toast(e instanceof Error ? e.message : 'That could not be saved.', 'bad');
     }
   }
 
-  /* --------------------------------------------------------------- thank you */
-
-  if (done) {
-    return (
-      <Screen>
-        <Header eyebrow="Added" title="Thank you." />
-        <Text variant="body" tone="muted">
-          Your memory is with {view.title}. The person who started it decides what goes
-          into the final story, and your words stay attributed to you.
-        </Text>
-
-        <PhotoPlate uri={view.imageUrl} aspect={16 / 9} />
-
-        {view.publishedStory ? (
-          <>
-            <Divider />
-            <Text variant="eyebrow" tone="muted">
-              The story so far
-            </Text>
-            <StoryCard
-              story={view.publishedStory}
-              memoryType={view.memoryType}
-              imageUrl={view.imageUrl}
-              contributorCount={view.contributorCount}
-            />
-            <ReactionRow chosen={reacted} onReact={react} />
-          </>
-        ) : (
-          <Card>
-            <View style={styles.pending}>
-              <Text variant="eyebrow" tone="muted">
-                Not published yet
-              </Text>
-              <Text variant="meta" tone="muted">
-                When the owner approves and shares the story, this link will show it.
-              </Text>
-            </View>
-          </Card>
-        )}
-
-        <Button label="Add another memory" variant="outline" onPress={() => setDone(false)} />
-      </Screen>
-    );
+  async function share() {
+    const url = globalThis.location?.href ?? '';
+    const outcome = await shareLink(url, `${view!.title} — add what you remember`);
+    if (outcome === 'failed') toast('That could not be shared.', 'bad');
+    else toast(outcome === 'copied' ? 'Link copied.' : 'Shared.', 'good');
   }
 
-  /* -------------------------------------------------------------- the ask */
-
   return (
-    <Screen
-      avoidKeyboard
-      footer={
-        <ActionBar>
-          <Button
-            label="Add my memory"
-            variant="accent"
-            onPress={submit}
-            loading={sending}
-            disabled={!valid}
-            full
-          />
-          <Text variant="meta" tone="muted" center>
-            No account. No sign-up. Your name is shown with your words.
-          </Text>
-        </ActionBar>
-      }
-    >
-      <Header eyebrow={view.title} />
-
-      <PhotoPlate uri={view.imageUrl} aspect={4 / 3} />
-
-      {view.publishedStory ? <StorySoFar /> : null}
-
-      {/* The question is the headline. `view.prompt` carries the same invitation in
-          the sender's words and has already done its job in the message that brought
-          this person here — repeating it verbatim under the headline reads as a
-          stutter, so the sub-line spends its space on what actually happens next. */}
-      <Text variant="title">{GUEST_QUESTION}</Text>
-      <Text variant="body" tone="muted">
-        Anything at all — a detail, a name for something, what it sounded like. It is
-        kept in your words, with your name on it.
-      </Text>
-
-      <Field
-        label="Your memory"
-        value={text}
-        onChangeText={setText}
-        placeholder="I remember…"
-        multiline
-        narrative
-        maxLength={2000}
-      />
-
-      <Field
-        label="Your name"
-        value={name}
-        onChangeText={setName}
-        placeholder="Aisha"
-        maxLength={60}
-        hint="Shown next to what you wrote, so no one has to guess who said it."
-      />
-
-      <ChoiceRow
-        label="How sure are you?"
-        choices={CERTAINTY_CHOICES}
-        value={certainty}
-        onChange={setCertainty}
-        hint="Being unsure is useful. The story will say so rather than smoothing it over."
-      />
-
-      <Disclosure open={more} onToggle={() => setMore(!more)} label="Add more, if you know it">
-        <Field
-          label="Your relationship to them"
-          value={relationship}
-          onChangeText={setRelationship}
-          placeholder="Aunt"
-          maxLength={60}
-        />
-        <Field
-          label="When was this?"
-          value={dateHint}
-          onChangeText={setDateHint}
-          placeholder="Around 1994"
-          maxLength={80}
-        />
-        <Field
-          label="Where was this?"
-          value={locationHint}
-          onChangeText={setLocationHint}
-          placeholder="Lahore"
-          maxLength={120}
-        />
-      </Disclosure>
-
-      <Text variant="meta" tone="muted">
-        Only what you write here is added. TellaTale does not try to identify anyone in
-        the photograph.
-      </Text>
-    </Screen>
-  );
-}
-
-/** Shown when a story already exists, so a late contributor knows it is not too late. */
-function StorySoFar() {
-  const { c } = useTheme();
-  return (
-    <View style={[styles.soFar, { borderColor: c.hairline }]}>
-      <Icon name="check" size={16} color={c.accent} />
-      <Text variant="meta" tone="muted" style={styles.soFarText}>
-        A story has already been published for this photo. Adding your memory can change
-        it — the owner can recompose it with your words included.
-      </Text>
-    </View>
-  );
-}
-
-function Disclosure({
-  open,
-  onToggle,
-  label,
-  children,
-}: {
-  open: boolean;
-  onToggle: () => void;
-  label: string;
-  children: React.ReactNode;
-}) {
-  const { c } = useTheme();
-  return (
-    <View style={styles.disclosure}>
-      <Pressable
-        onPress={onToggle}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityState={{ expanded: open }}
-        style={({ pressed }) => [styles.disclosureHead, pressed && { opacity: 0.7 }]}
+    <View style={[styles.root, { backgroundColor: c.ink }]}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
       >
-        <Text variant="ui" tone="muted">
-          {label}
-        </Text>
-        <View style={open ? styles.rotated : undefined}>
-          <Icon name="chevron" size={16} color={c.textMuted} />
+        {/* ----------------------------------------------------- photograph */}
+        <View style={styles.hero}>
+          <PhotoPlate uri={view.imageUrl} aspect={1} rounded={false} />
+
+          <View style={[styles.heroBar, { top: insets.top + space.sm }]}>
+            <RoundButton icon="back" label="Go back" onPress={() => router.back()} />
+            <View style={styles.grow} />
+            <RoundButton icon="share" label="Share this link" onPress={share} />
+            {story ? (
+              <RoundButton
+                icon="heart"
+                label={
+                  hearted
+                    ? 'You said this brought back a memory'
+                    : 'This brought back a memory'
+                }
+                onPress={heart}
+                active={hearted}
+              />
+            ) : null}
+          </View>
+
+          {/* The design puts a "Tap photo to see who's who" pill here, driven by face
+              tags. Nothing in the schema stores a tag, so there are no markers to draw
+              and no honest way to invent them — the same reason the add sheet's
+              "Who's in it" row says so out loud. The pill returns with the feature. */}
         </View>
-      </Pressable>
-      {open ? <View style={styles.disclosureBody}>{children}</View> : null}
+
+        <View style={styles.body}>
+          <Text variant="display">{view.title}</Text>
+
+          {view.dateHint || view.locationHint ? (
+            <View style={styles.stampRow}>
+              {view.dateHint ? (
+                <View style={styles.stamp}>
+                  <Icon name="calendar" size={14} color={c.textMuted} />
+                  <Text variant="label" tone="muted">
+                    {view.dateHint}
+                  </Text>
+                </View>
+              ) : null}
+              {view.dateHint && view.locationHint ? (
+                <Text variant="label" tone="muted">
+                  ·
+                </Text>
+              ) : null}
+              {view.locationHint ? (
+                <View style={styles.stamp}>
+                  <Icon name="pin" size={14} color={c.textMuted} />
+                  <Text variant="label" tone="muted">
+                    {view.locationHint}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={[styles.rule, { backgroundColor: c.hairline }]} />
+
+          {woven ? (
+            <>
+              <View style={styles.sectionHead}>
+                <Icon name="sparkle" size={15} color={c.accent} />
+                <Text variant="eyebrow" tone="accent">
+                  The family&apos;s version
+                </Text>
+              </View>
+
+              <Text variant="body" style={styles.woven}>
+                {woven}
+              </Text>
+
+              <Text variant="meta" tone="muted">
+                {wovenFrom > 0
+                  ? `Woven from ${wovenFrom} ${wovenFrom === 1 ? 'account' : 'accounts'}`
+                  : 'Woven from the accounts below'}
+                {' · originals kept below'}
+              </Text>
+
+              {addedSince > 0 && wovenFrom > 0 ? (
+                <Text variant="meta" tone="muted">
+                  {addedSince} {addedSince === 1 ? 'account was' : 'accounts were'} added
+                  after this was written. The person who started it can weave it again to
+                  include {addedSince === 1 ? 'it' : 'them'}.
+                </Text>
+              ) : null}
+
+              <View style={[styles.rule, { backgroundColor: c.hairline }]} />
+
+              <Text variant="uiStrong">
+                {view.contributorCount}{' '}
+                {view.contributorCount === 1 ? 'person remembers' : 'people remember'}{' '}
+                this
+              </Text>
+
+              <View style={styles.accounts}>
+                {view.accounts.map((account) => (
+                  <View key={account.id} style={styles.account}>
+                    <Avatar name={account.contributorName} size={38} />
+                    <View style={styles.grow}>
+                      <View style={styles.accountHead}>
+                        <Text variant="uiStrong">{account.contributorName}</Text>
+                        {account.relationship ? (
+                          <Text variant="label" tone="muted">
+                            {account.relationship}
+                          </Text>
+                        ) : null}
+                        <CertaintyChip certainty={account.certainty} />
+                      </View>
+
+                      <Text variant="body" tone="muted">
+                        {account.text}
+                      </Text>
+
+                      {/* The design offers "Lightly polished · view original". Here the
+                          words under a name have never been touched: `remarks.body` is
+                          immutable and a database trigger refuses edits to it, even
+                          from the owner. There is no polished version to toggle away
+                          from, and pretending otherwise would understate the promise. */}
+                      <View style={styles.verbatim}>
+                        <Icon name="lock" size={12} color={c.textMuted} />
+                        <Text variant="meta" tone="muted">
+                          Kept word for word
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={styles.pending}>
+              <Text variant="title">{GUEST_QUESTION}</Text>
+              <Text variant="body" tone="muted">
+                Anything at all — a detail, a name for something, what it sounded like.
+                It is kept in your words, with your name on it.
+              </Text>
+
+              {view.contributorCount > 0 ? (
+                <View style={[styles.note, { backgroundColor: c.surfaceRaised }]}>
+                  <Text variant="label" tone="muted">
+                    {view.contributorCount}{' '}
+                    {view.contributorCount === 1 ? 'person has' : 'people have'} added
+                    theirs already. You will be able to read the story here once the
+                    person who started it approves and shares it.
+                  </Text>
+                </View>
+              ) : (
+                <EmptyState line="Nobody has added anything yet. Yours would be the first." />
+              )}
+            </View>
+          )}
+
+          {thanked ? (
+            <View style={[styles.thanks, { borderColor: c.accent }]}>
+              <Icon name="check" size={16} color={c.accent} />
+              <Text variant="label" tone="muted" style={styles.grow}>
+                Added, and attributed to you. The person who started this decides what
+                goes into the final story.
+              </Text>
+            </View>
+          ) : null}
+
+          <Text variant="meta" tone="muted">
+            Only what you write is added. TellaTale does not try to identify anyone in
+            the photograph.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* ------------------------------------------------------------- CTA */}
+      <View
+        style={[
+          styles.cta,
+          {
+            backgroundColor: c.ink,
+            borderTopColor: c.hairline,
+            paddingBottom: Math.max(insets.bottom, space.base),
+          },
+        ]}
+      >
+        <Button
+          label="I remember this too"
+          variant="accent"
+          full
+          onPress={() => {
+            haptics.contributed();
+            setSheetOpen(true);
+          }}
+          accessibilityHint="Opens a sheet to add what you remember"
+        />
+      </View>
+
+      <AddYourSide
+        visible={sheetOpen}
+        token={token}
+        coverUrl={view.imageUrl}
+        onClose={() => setSheetOpen(false)}
+        onAdded={() => {
+          setSheetOpen(false);
+          setThanked(true);
+          reload();
+        }}
+      />
     </View>
   );
 }
 
-/** MVP spec §7: exactly three reactions, one choice, no comment thread. */
-function ReactionRow({
-  chosen,
-  onReact,
+function RoundButton({
+  icon,
+  label,
+  onPress,
+  active,
 }: {
-  chosen: Reaction | null;
-  onReact: (r: Reaction) => void;
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+  active?: boolean;
 }) {
   const { c } = useTheme();
   return (
-    <View style={styles.reactions}>
-      <Text variant="eyebrow" tone="muted">
-        How did that land?
-      </Text>
-      <Row style={styles.reactionRow}>
-        {Reaction.options.map((r) => {
-          const active = chosen === r;
-          return (
-            <Pressable
-              key={r}
-              onPress={() => onReact(r)}
-              accessibilityRole="button"
-              accessibilityLabel={reactionLabel[r]}
-              accessibilityState={{ selected: active }}
-              style={({ pressed }) => [
-                styles.reaction,
-                {
-                  borderColor: active ? c.accent : c.hairline,
-                  backgroundColor: active ? c.surfaceRaised : 'transparent',
-                },
-                pressed && { opacity: 0.7 },
-              ]}
-            >
-              <Text variant="ui" tone={active ? 'default' : 'muted'}>
-                {reactionLabel[r]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </Row>
-    </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      aria-pressed={active}
+      hitSlop={8}
+      style={({ pressed }) => [
+        styles.round,
+        // Always the light surface, never the theme's. These sit on a photograph, and
+        // a dark chip on a dark photo is an invisible back button.
+        { backgroundColor: '#FFFFFF' },
+        pressed && { opacity: 0.85 },
+      ]}
+    >
+      <Icon name={icon} size={18} color={active ? c.accent : '#16161A'} filled={active} />
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  pending: { gap: space.xs },
-  soFar: {
+  root: { flex: 1 },
+  scroll: { paddingBottom: space.xxl },
+  notFound: { gap: space.md, paddingTop: space.xxl },
+  hero: { position: 'relative' },
+  heroBar: {
+    position: 'absolute',
+    left: layout.gutter,
+    right: layout.gutter,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  round: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  grow: { flex: 1 },
+  body: { paddingHorizontal: layout.gutter, paddingTop: space.lg, gap: space.md },
+  stampRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
+  stamp: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  rule: { height: StyleSheet.hairlineWidth, marginVertical: space.xs },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  woven: { lineHeight: 26 },
+  accounts: { gap: space.lg, paddingTop: space.xs },
+  account: { flexDirection: 'row', gap: space.md },
+  accountHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    flexWrap: 'wrap',
+  },
+  verbatim: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingTop: 2 },
+  pending: { gap: space.md },
+  note: { borderRadius: radius.card, padding: space.base },
+  thanks: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: space.md,
@@ -385,23 +425,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     padding: space.md,
   },
-  soFarText: { flex: 1 },
-  disclosure: { gap: space.md },
-  disclosureHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 48,
-  },
-  rotated: { transform: [{ rotate: '90deg' }] },
-  disclosureBody: { gap: space.base },
-  reactions: { gap: space.md },
-  reactionRow: { flexWrap: 'wrap', gap: space.sm },
-  reaction: {
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: space.base,
-    borderRadius: radius.avatar,
-    borderWidth: 1,
+  cta: {
+    paddingHorizontal: layout.gutter,
+    paddingTop: space.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });

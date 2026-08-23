@@ -11,6 +11,7 @@
  */
 
 import type {
+  Certainty,
   ComposedStory,
   Memory,
   MemoryType,
@@ -47,6 +48,21 @@ export interface SubmitRemarkInput {
 
 /** What a guest is allowed to see. Owner identity and the AI narrative are withheld
  *  from a draft, per the StoryImage privacy rule. */
+/**
+ * One person's account, as a reader of a published story sees it.
+ *
+ * No author id and no way back to an account — a contributor is a name and some
+ * words, which is all they ever agreed to be.
+ */
+export interface GuestAccount {
+  id: string;
+  contributorName: string;
+  relationship: string | null;
+  text: string;
+  certainty: Certainty;
+  createdAt: number;
+}
+
 export interface GuestMemoryView {
   memoryId: string;
   title: string;
@@ -55,8 +71,15 @@ export interface GuestMemoryView {
   /** The invitation prompt, verbatim from the MVP spec §2. */
   prompt: string;
   contributorCount: number;
+  dateHint: string | null;
+  locationHint: string | null;
   /** Present only once the owner has approved AND published. */
   publishedStory: StoryDoc | null;
+  /**
+   * The accounts woven into the published story. Empty until it is published —
+   * holding a link must not reveal what the family said in private.
+   */
+  accounts: GuestAccount[];
 }
 
 export interface Collection {

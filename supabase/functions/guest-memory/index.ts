@@ -72,6 +72,42 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  /**
+   * The accounts behind a published story.
+   *
+   * Withheld until the owner publishes, and that gate is the whole argument. Before
+   * publication a contributor sees only the photo and the question — they must not be
+   * able to read the family's private recollections just by holding a link.
+   *
+   * Once the owner approves and publishes, the woven story already names these people
+   * and quotes their disagreements out loud: "Sara remembers it as 1994; Abbu places
+   * it a year earlier." Showing the originals underneath reveals nothing the story has
+   * not already said, and it is the difference between reading a summary about your
+   * family and reading your family.
+   *
+   * Only `included` remarks. The owner curates by exception, and a remark they left
+   * out of the story must not reappear below it.
+   */
+  let accounts: unknown[] = [];
+  if (publishedStory) {
+    const { data } = await db
+      .from('remarks')
+      // An explicit column list, not `*`: author_id must never leave this function.
+      .select('id, contributor_name, relationship, body, certainty, created_at')
+      .eq('memory_id', memory.id)
+      .eq('included', true)
+      .order('created_at', { ascending: true });
+
+    accounts = (data ?? []).map((r) => ({
+      id: r.id,
+      contributorName: r.contributor_name,
+      relationship: r.relationship,
+      text: r.body,
+      certainty: r.certainty,
+      createdAt: Date.parse(r.created_at),
+    }));
+  }
+
   return json({
     memoryId: memory.id,
     title: memory.title,
@@ -79,6 +115,9 @@ Deno.serve(async (req: Request) => {
     imageUrl: await signedImageUrl(db, memory.image_path),
     prompt: 'What do you remember about this photo?',
     contributorCount: memory.contributor_count,
+    dateHint: memory.date_hint,
+    locationHint: memory.location_hint,
     publishedStory,
+    accounts,
   });
 });

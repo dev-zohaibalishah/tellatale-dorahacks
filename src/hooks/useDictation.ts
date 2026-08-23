@@ -20,10 +20,28 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
+
+/**
+ * Loaded behind a try/catch because the package calls requireNativeModule at
+ * import time. A development APK built before this plugin was added throws
+ * "Cannot find native module 'ExpoSpeechRecognition'" the moment add.tsx
+ * imports this file — which is every time the add sheet is even registered.
+ *
+ * Metro cannot add native code. Until a new EAS development build is installed,
+ * speech is null and the sheet stays usable for typing.
+ */
+type SpeechNative = typeof import('expo-speech-recognition');
+
+function loadSpeechNative(): SpeechNative | null {
+  try {
+    return require('expo-speech-recognition') as SpeechNative;
+  } catch {
+    return null;
+  }
+}
+
+const speech = loadSpeechNative();
+const ExpoSpeechRecognitionModule = speech?.ExpoSpeechRecognitionModule;
 
 export type DictationStatus = 'idle' | 'starting' | 'listening' | 'unsupported';
 
@@ -48,7 +66,9 @@ function append(existing: string, addition: string): string {
 }
 
 export function useDictation(onCommit: (text: string) => void): Dictation {
-  const [status, setStatus] = useState<DictationStatus>('idle');
+  const [status, setStatus] = useState<DictationStatus>(
+    ExpoSpeechRecognitionModule ? 'idle' : 'unsupported'
+  );
   const [partial, setPartial] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -59,18 +79,19 @@ export function useDictation(onCommit: (text: string) => void): Dictation {
 
   const listening = useRef(false);
 
-  useSpeechRecognitionEvent('start', () => {
+  const useSpeechRecognitionEvent = speech?.useSpeechRecognitionEvent;
+  useSpeechRecognitionEvent?.('start', () => {
     listening.current = true;
     setStatus('listening');
   });
 
-  useSpeechRecognitionEvent('end', () => {
+  useSpeechRecognitionEvent?.('end', () => {
     listening.current = false;
     setStatus('idle');
     setPartial('');
   });
 
-  useSpeechRecognitionEvent('result', (event) => {
+  useSpeechRecognitionEvent?.('result', (event) => {
     const said = event.results?.[0]?.transcript ?? '';
     if (!said) return;
 
@@ -83,7 +104,7 @@ export function useDictation(onCommit: (text: string) => void): Dictation {
     }
   });
 
-  useSpeechRecognitionEvent('error', (event) => {
+  useSpeechRecognitionEvent?.('error', (event) => {
     listening.current = false;
     setStatus('idle');
     setPartial('');
@@ -103,11 +124,15 @@ export function useDictation(onCommit: (text: string) => void): Dictation {
   // Never leave the microphone open behind a screen that has gone away.
   useEffect(() => {
     return () => {
-      if (listening.current) ExpoSpeechRecognitionModule.stop();
+      if (listening.current) ExpoSpeechRecognitionModule?.stop();
     };
   }, []);
 
   const start = useCallback(async () => {
+    if (!ExpoSpeechRecognitionModule) {
+      setStatus('unsupported');
+      return;
+    }
     setError(null);
     setStatus('starting');
     try {
@@ -142,7 +167,7 @@ export function useDictation(onCommit: (text: string) => void): Dictation {
   }, []);
 
   const stop = useCallback(() => {
-    ExpoSpeechRecognitionModule.stop();
+    ExpoSpeechRecognitionModule?.stop();
   }, []);
 
   const toggle = useCallback(() => {

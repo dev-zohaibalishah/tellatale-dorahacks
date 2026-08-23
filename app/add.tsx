@@ -321,9 +321,9 @@ export default function AddMemory() {
               <View style={[styles.speakNote, { borderColor: c.hairline }]}>
                 <Icon name="mic" size={18} color={c.textMuted} />
                 <Text variant="label" tone="muted" style={styles.grow}>
-                  Dictation needs a development build — Expo Go has no speech module,
-                  and this browser has no Web Speech API. Until then, your keyboard&apos;s
-                  own microphone key types straight into the box below.
+                  Dictation is not in this install yet — the speech module is native
+                  and needs a new development build. Until then, type in the box
+                  below, or use your keyboard&apos;s own microphone key.
                 </Text>
               </View>
             )

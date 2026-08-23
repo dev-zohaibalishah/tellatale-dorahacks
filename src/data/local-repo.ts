@@ -301,7 +301,22 @@ export function createLocalRepository(): Repository {
         imageUrl: memory.imagePath,
         prompt: INVITE_PROMPT,
         contributorCount: memory.contributorCount,
+        dateHint: memory.dateHint,
+        locationHint: memory.locationHint,
         publishedStory: published ?? null,
+        // Same gate as the server: the accounts appear only once the story does.
+        accounts: published
+          ? (s.remarks[memory.id] ?? [])
+              .filter((r) => r.included)
+              .map((r) => ({
+                id: r.id,
+                contributorName: r.contributorName,
+                relationship: r.relationship,
+                text: r.text,
+                certainty: r.certainty,
+                createdAt: r.createdAt,
+              }))
+          : [],
       };
     },
 
