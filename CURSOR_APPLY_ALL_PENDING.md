@@ -68,7 +68,22 @@ appeared to do nothing.
 
 3. get_advisors with type "security". Show me anything new.
 
-## Step 4 — Rebuild for dictation
+## Step 4 — Redeploy guest-memory
+
+The contributor screen now reads the accounts behind a published story, and the
+function that serves them changed. Redeploy it:
+
+  npx supabase functions deploy guest-memory
+
+It must stay verify_jwt: false — a contributor has no account. supabase/config.toml
+already declares that; do not pass a flag that overrides it.
+
+Then check the gate holds. With one of my memories published, POST its token to
+/functions/v1/guest-memory and confirm the response has an  array. Set that
+memory back to private and POST again —  must be empty and no contributor
+name may appear anywhere in the payload. Show me both responses.
+
+## Step 5 — Rebuild for dictation
 
 "Speak it" now uses expo-speech-recognition. It is a native module and RECORD_AUDIO
 is no longer blocked in app.config.ts, so Expo Go and the existing dev build cannot
