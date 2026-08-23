@@ -48,3 +48,10 @@ export function requireSupabase(): SupabaseClient {
 
 /** Bucket holding memory originals. Private; reads go through signed URLs. */
 export const MEDIA_BUCKET = 'memories';
+
+/**
+ * Bucket holding profile pictures. Also private — a person's face is not less
+ * sensitive than their photographs, and this app's whole claim is that nothing is
+ * public until they say so.
+ */
+export const AVATAR_BUCKET = 'avatars';

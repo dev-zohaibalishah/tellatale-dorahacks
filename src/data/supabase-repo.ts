@@ -12,7 +12,7 @@
  */
 
 
-import { MEDIA_BUCKET, requireSupabase } from '../supabase/client';
+import { AVATAR_BUCKET, MEDIA_BUCKET, requireSupabase } from '../supabase/client';
 import {
   Memory,
   Remark,
@@ -26,6 +26,8 @@ import { randomToken } from '../lib/id';
 import type {
   CreateMemoryInput,
   GuestMemoryView,
+  Profile,
+  ProfilePatch,
   Repository,
   SubmitRemarkInput,
 } from './repository';
@@ -114,9 +116,168 @@ async function callFunction<T>(name: string, body: Record<string, unknown>): Pro
   return data as T;
 }
 
+function toProfile(r: Row): Profile {
+  return {
+    uid: r.id,
+    username: r.username,
+    displayName: r.display_name ?? null,
+    bio: r.bio ?? null,
+    location: r.location ?? null,
+    avatarPath: r.avatar_path ?? null,
+    createdAt: ms(r.created_at) ?? Date.now(),
+  };
+}
+
+/** Every column the client is allowed to read back. `select('*')` would drift. */
+const PROFILE_COLUMNS = 'id, username, display_name, bio, location, avatar_path, created_at';
+
+/**
+ * Module-level rather than a method, because the write paths need to read the current
+ * row first and `this` inside a returned object literal is only correct for as long
+ * as nobody destructures the repository. That is a footgun with no upside here.
+ */
+async function loadProfile(uid: string): Promise<Profile | null> {
+  const { data, error } = await requireSupabase()
+    .from('profiles')
+    .select(PROFILE_COLUMNS)
+    .eq('id', uid)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? toProfile(data) : null;
+}
+
+/**
+ * Mirrors the display fields onto the Auth user's metadata.
+ *
+ * The session — and therefore every header, tab bar and avatar in the app — is built
+ * from `user_metadata`, not from a profiles query. Writing the row alone would save
+ * correctly and change nothing on screen until the next cold start, which reads as a
+ * failed save. `updateUser` fires USER_UPDATED, and the session picks it up.
+ *
+ * The profiles row stays the record of truth; this is a cache with a push.
+ */
+async function mirrorToAuthMetadata(p: Profile): Promise<void> {
+  const db = requireSupabase();
+  const { error } = await db.auth.updateUser({
+    data: {
+      display_name: p.displayName,
+      avatar_path: p.avatarPath,
+    },
+  });
+  // A failed mirror is a stale header, not lost data — the row is already written.
+  // Surfacing it as a save failure would be a lie about what happened.
+  if (error) console.warn('Profile saved, but the session copy did not refresh.', error.message);
+}
+
 export function createSupabaseRepository(): Repository {
   return {
     kind: 'supabase',
+
+    /* ----------------------------------------------------------- profile */
+
+    getProfile: loadProfile,
+
+    async updateProfile(uid, patch: ProfilePatch) {
+      const db = requireSupabase();
+
+      // Only the keys actually present are sent. An absent key means "leave alone",
+      // and building the object from `patch` directly would turn every undefined into
+      // a null and quietly wipe fields the editor never touched.
+      const row: Row = {};
+      if ('displayName' in patch) row.display_name = patch.displayName;
+      if ('bio' in patch) row.bio = patch.bio;
+      if ('location' in patch) row.location = patch.location;
+
+      if (Object.keys(row).length === 0) {
+        const current = await loadProfile(uid);
+        if (!current) throw new Error('Your profile could not be found.');
+        return current;
+      }
+
+      const { data, error } = await db
+        .from('profiles')
+        .update(row)
+        .eq('id', uid)
+        .select(PROFILE_COLUMNS)
+        .single();
+      if (error) throw new Error(error.message);
+
+      const saved = toProfile(data);
+      await mirrorToAuthMetadata(saved);
+      return saved;
+    },
+
+    async setAvatar(uid, localImageUri) {
+      const db = requireSupabase();
+
+      // Previous path is read before the upload so the old object can be cleaned up
+      // after the row commits — never before, or a failed write leaves the account
+      // with a profile pointing at a file that no longer exists.
+      const previous = await loadProfile(uid);
+
+      // A fresh filename every time, rather than overwriting one fixed path. Signed
+      // URLs are cached by the image layer and by the CDN, and reusing the path meant
+      // a user changed their picture and kept seeing the old one for fifteen minutes,
+      // which is indistinguishable from the save having failed.
+      const path = `${uid}/${globalThis.crypto.randomUUID()}.jpg`;
+
+      const image = await readImageBytes(localImageUri);
+      const { error: uploadError } = await db.storage
+        .from(AVATAR_BUCKET)
+        .upload(path, image.body, { contentType: image.contentType, upsert: false });
+      if (uploadError) throw new Error(uploadError.message);
+
+      const { data, error } = await db
+        .from('profiles')
+        .update({ avatar_path: path })
+        .eq('id', uid)
+        .select(PROFILE_COLUMNS)
+        .single();
+
+      if (error) {
+        await db.storage.from(AVATAR_BUCKET).remove([path]).catch(() => {});
+        throw new Error(error.message);
+      }
+
+      if (previous?.avatarPath && previous.avatarPath !== path) {
+        await db.storage.from(AVATAR_BUCKET).remove([previous.avatarPath]).catch(() => {});
+      }
+
+      const saved = toProfile(data);
+      await mirrorToAuthMetadata(saved);
+      return saved;
+    },
+
+    async removeAvatar(uid) {
+      const db = requireSupabase();
+      const previous = await loadProfile(uid);
+
+      const { data, error } = await db
+        .from('profiles')
+        .update({ avatar_path: null })
+        .eq('id', uid)
+        .select(PROFILE_COLUMNS)
+        .single();
+      if (error) throw new Error(error.message);
+
+      // Row first, object second. "Remove my picture" is a privacy request, so the
+      // file goes too — not just the reference to it.
+      if (previous?.avatarPath) {
+        await db.storage.from(AVATAR_BUCKET).remove([previous.avatarPath]).catch(() => {});
+      }
+
+      const saved = toProfile(data);
+      await mirrorToAuthMetadata(saved);
+      return saved;
+    },
+
+    async avatarUrl(path) {
+      const { data, error } = await requireSupabase()
+        .storage.from(AVATAR_BUCKET)
+        .createSignedUrl(path, 3600);
+      if (error) throw new Error(error.message);
+      return data.signedUrl;
+    },
 
     /* ------------------------------------------------------------- owner */
 

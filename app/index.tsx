@@ -35,6 +35,7 @@ import { useImageUrl, useMemories } from '../src/hooks/repo';
 import { track } from '../src/lib/analytics';
 import { usePushRegistration } from '../src/push/usePushRegistration';
 import { useSession } from '../src/state/auth';
+import { nameFor, useProfile } from '../src/state/profile';
 import { useTheme } from '../src/state/theme';
 import { layout, space } from '../src/theme/tokens';
 import { type Memory } from '../shared/story';
@@ -54,7 +55,8 @@ function formatWhen(memory: Memory): string | null {
 export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { uid, ready, displayName, username } = useSession();
+  const { uid, ready } = useSession();
+  const { profile, avatarUrl } = useProfile();
   const { c } = useTheme();
 
   const { data: memories, loading } = useMemories(uid);
@@ -79,7 +81,7 @@ export default function Home() {
     [memories]
   );
 
-  const firstName = (displayName ?? username ?? '').split(' ')[0];
+  const firstName = nameFor(profile).split(' ')[0];
 
   return (
     <View style={[styles.root, { backgroundColor: c.ink }]}>
@@ -114,7 +116,7 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel="Your profile"
           >
-            <Avatar name={displayName ?? username} size={38} />
+            <Avatar uri={avatarUrl} name={nameFor(profile)} size={38} />
           </Pressable>
         </View>
 

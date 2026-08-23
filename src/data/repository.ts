@@ -98,8 +98,48 @@ export interface DashboardSummary {
   sharedWithMe: number;
 }
 
+/**
+ * The account holder as they choose to appear.
+ *
+ * `username` is here but is not editable anywhere in the app. It is the identity Auth
+ * is keyed by — through the synthetic address `<username>@tellatale.app` — so a
+ * rename would leave the account unable to sign in. A database trigger refuses the
+ * change too; this is one of the few places where the UI and the schema agree by
+ * design rather than by accident.
+ */
+export interface Profile {
+  uid: string;
+  username: string;
+  displayName: string | null;
+  bio: string | null;
+  location: string | null;
+  /** Storage path, not a URL. Resolve with `avatarUrl`. */
+  avatarPath: string | null;
+  createdAt: number;
+}
+
+/**
+ * A patch, deliberately: `undefined` means "leave alone" and `null` means "clear it".
+ * Passing the whole profile back would make the editor's stale copy authoritative and
+ * silently undo anything changed elsewhere between load and save.
+ */
+export interface ProfilePatch {
+  displayName?: string | null;
+  bio?: string | null;
+  location?: string | null;
+}
+
 export interface Repository {
   readonly kind: 'supabase' | 'local';
+
+  /* ---- profile ---- */
+  getProfile(uid: string): Promise<Profile | null>;
+  updateProfile(uid: string, patch: ProfilePatch): Promise<Profile>;
+  /** Uploads a local image, replaces any previous avatar, returns the saved profile. */
+  setAvatar(uid: string, localImageUri: string): Promise<Profile>;
+  removeAvatar(uid: string): Promise<Profile>;
+  /** Resolves a stored avatar path to a short-lived, displayable URL. */
+  avatarUrl(path: string): Promise<string>;
 
   /* ---- owner ---- */
   listMemories(uid: string): Promise<Memory[]>;

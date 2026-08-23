@@ -30,7 +30,7 @@ Call get_cost and confirm_cost first and tell me the price before creating.
 
 Apply every file in supabase/migrations/ IN FILENAME ORDER, each as its own
 migration with apply_migration, using the filename (minus the timestamp) as the
-migration name. There are 9 of them. Do not skip any and do not reorder them —
+migration name. There are 10 of them. Do not skip any and do not reorder them —
 20260821230559_fix_is_service_role_execute.sql repairs a mistake made by
 20260821215746_harden_functions.sql, and applying them out of order leaves every
 client insert broken.
@@ -127,7 +127,7 @@ Commit and push to main. Message should say which project ref the app now points
 
 - **Old project wiped.** Every row and every uploaded image deleted from
   `vaaoyltakckcdtkwfxph`. Schema left intact so it still runs until you swap keys.
-- **Migrations are in the repo** — all 9, matching what was applied, in order.
+- **Migrations are in the repo** — all 10, matching what was applied, in order.
 - **Edge Function sources are in the repo** — all 5, plus `_shared/`.
 - **`supabase/config.toml`** already declares the per-function `verify_jwt` values.
 

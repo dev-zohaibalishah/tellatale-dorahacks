@@ -20,6 +20,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { FeedbackProvider } from '../src/components/feedback';
 import { WELCOME_SEEN_KEY } from './(auth)/welcome';
 import { AuthProvider, useSession } from '../src/state/auth';
+import { ProfileProvider } from '../src/state/profile';
 import { ThemeProvider, useTheme } from '../src/state/theme';
 
 /**
@@ -94,6 +95,7 @@ function Shell() {
         <Stack.Screen name="people" options={{ animation: 'none' }} />
         <Stack.Screen name="me" options={{ animation: 'none' }} />
         <Stack.Screen name="notifications" />
+        <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="create" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="collection/new" options={{ presentation: 'modal' }} />
@@ -129,7 +131,10 @@ export default function RootLayout() {
           {/* Inside ThemeProvider — the toast and confirm surfaces are themed. */}
           <FeedbackProvider>
             <AuthProvider>
-              <Shell />
+              {/* Inside AuthProvider — it reads the session to know whose profile. */}
+              <ProfileProvider>
+                <Shell />
+              </ProfileProvider>
             </AuthProvider>
           </FeedbackProvider>
         </ThemeProvider>

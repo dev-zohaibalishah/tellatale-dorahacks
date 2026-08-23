@@ -33,8 +33,8 @@ cannot be recovered, only reset.
 Open **SQL Editor → New query**, paste the whole of [`schema.sql`](./schema.sql), run.
 
 It is wrapped in a transaction: if anything fails, nothing is applied and you can fix
-and re-run. On success you have 8 tables, the RLS policies, the guard triggers, the
-storage bucket, and the two dashboard functions.
+and re-run. On success you have 8 tables, the RLS policies, the guard triggers, both
+storage buckets (`memories` and `avatars`), and the two dashboard functions.
 
 Then check **Advisors → Security**. It should report one INFO note about
 `rate_limits` having RLS enabled with no policies. That one is deliberate — it denies

@@ -26,6 +26,8 @@ import { composeLocally } from './local-composer';
 import type {
   CreateMemoryInput,
   GuestMemoryView,
+  Profile,
+  ProfilePatch,
   Repository,
   SubmitRemarkInput,
 } from './repository';
@@ -41,6 +43,8 @@ interface StoredCollection {
 }
 
 interface Snapshot {
+  /** Keyed by uid. Local mode only ever has one, but keying it keeps the shape honest. */
+  profiles: Record<string, Profile>;
   memories: Memory[];
   remarks: Record<string, Remark[]>;
   stories: Record<string, StoryDoc>;
@@ -51,6 +55,7 @@ interface Snapshot {
 }
 
 const empty: Snapshot = {
+  profiles: {},
   memories: [],
   remarks: {},
   stories: {},
@@ -90,9 +95,71 @@ function findByToken(s: Snapshot, token: string): Memory | undefined {
   return s.memories.find((m) => m.inviteToken === token);
 }
 
+/**
+ * Local mode has no signup step, so the first read of a profile has to invent one
+ * rather than return null — otherwise the editor opens on an account that appears not
+ * to exist. The uid doubles as the username here, exactly as `auth.tsx` treats it.
+ */
+function blankProfile(uid: string): Profile {
+  return {
+    uid,
+    username: uid,
+    displayName: null,
+    bio: null,
+    location: null,
+    avatarPath: null,
+    createdAt: Date.now(),
+  };
+}
+
 export function createLocalRepository(): Repository {
   return {
     kind: 'local',
+
+    /* ----------------------------------------------------------- profile */
+
+    async getProfile(uid) {
+      const s = await load();
+      return s.profiles[uid] ?? blankProfile(uid);
+    },
+
+    async updateProfile(uid, patch: ProfilePatch) {
+      const s = await load();
+      const current = s.profiles[uid] ?? blankProfile(uid);
+      // Same patch semantics as the Supabase adapter: a key that is absent is left
+      // alone, a key set to null is cleared. Spreading `patch` directly would let an
+      // undefined overwrite a real value and the two adapters would disagree.
+      const next: Profile = {
+        ...current,
+        ...('displayName' in patch ? { displayName: patch.displayName ?? null } : null),
+        ...('bio' in patch ? { bio: patch.bio ?? null } : null),
+        ...('location' in patch ? { location: patch.location ?? null } : null),
+      };
+      await save({ ...s, profiles: { ...s.profiles, [uid]: next } });
+      return next;
+    },
+
+    async setAvatar(uid, localImageUri) {
+      const s = await load();
+      const current = s.profiles[uid] ?? blankProfile(uid);
+      // The picker URI is the "path". Device-local and lost on reinstall, which is
+      // the same bargain the local adapter already makes for memory photos.
+      const next: Profile = { ...current, avatarPath: localImageUri };
+      await save({ ...s, profiles: { ...s.profiles, [uid]: next } });
+      return next;
+    },
+
+    async removeAvatar(uid) {
+      const s = await load();
+      const current = s.profiles[uid] ?? blankProfile(uid);
+      const next: Profile = { ...current, avatarPath: null };
+      await save({ ...s, profiles: { ...s.profiles, [uid]: next } });
+      return next;
+    },
+
+    async avatarUrl(path) {
+      return path;
+    },
 
     async listMemories(uid) {
       const s = await load();

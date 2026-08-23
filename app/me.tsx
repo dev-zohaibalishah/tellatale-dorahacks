@@ -18,18 +18,19 @@ import { Button } from '../src/components/Button';
 import { useConfirm } from '../src/components/feedback';
 import { Avatar } from '../src/components/home-ui';
 import { Icon, type IconName } from '../src/components/icons';
-import { Divider } from '../src/components/layout';
 import { TabScreen } from '../src/components/TabScreen';
 import { Text } from '../src/components/Text';
 import { useMemories } from '../src/hooks/repo';
 import { useSession } from '../src/state/auth';
+import { nameFor, useProfile } from '../src/state/profile';
 import { useTheme } from '../src/state/theme';
 import { radius, space } from '../src/theme/tokens';
 
 export default function Me() {
   const router = useRouter();
   const confirm = useConfirm();
-  const { uid, displayName, username, signOutNow } = useSession();
+  const { uid, signOutNow } = useSession();
+  const { profile, avatarUrl } = useProfile();
   const { data: memories } = useMemories(uid);
   const { c, name, setTheme } = useTheme();
 
@@ -66,15 +67,47 @@ export default function Me() {
   return (
     <TabScreen active="me">
       {/* --------------------------------------------------------- identity */}
-      <View style={styles.identity}>
-        <Avatar name={displayName ?? username} size={64} />
+      {/* The whole block is the button, not a small "edit" link beside it. Tapping
+          your own face to change it is the gesture people already expect. */}
+      <Pressable
+        onPress={() => router.push('/profile/edit')}
+        accessibilityRole="button"
+        accessibilityLabel="Edit your profile"
+        style={({ pressed }) => [styles.identity, pressed && { opacity: 0.8 }]}
+      >
+        <Avatar uri={avatarUrl} name={nameFor(profile)} size={64} />
         <View style={styles.grow}>
-          <Text variant="title">{displayName ?? username ?? 'You'}</Text>
+          <Text variant="title">{nameFor(profile)}</Text>
           <Text variant="label" tone="muted">
-            {username ? `@${username}` : 'Signed in'}
+            {profile?.username ? `@${profile.username}` : 'Signed in'}
           </Text>
+          {profile?.location ? (
+            <Text variant="meta" tone="muted">
+              {profile.location}
+            </Text>
+          ) : null}
         </View>
-      </View>
+        <Icon name="edit" size={17} color={c.textMuted} />
+      </Pressable>
+
+      {profile?.bio ? (
+        <Text variant="body" tone="muted">
+          {profile.bio}
+        </Text>
+      ) : (
+        // An empty bio is an invitation, not a blank. This is the one prompt on the
+        // screen that asks the owner for something about themselves rather than
+        // about a photograph.
+        <Pressable
+          onPress={() => router.push('/profile/edit')}
+          accessibilityRole="button"
+          accessibilityLabel="Add a line about yourself"
+        >
+          <Text variant="label" tone="muted">
+            Add a line about yourself — the people you invite will see it.
+          </Text>
+        </Pressable>
+      )}
 
       {/* ------------------------------------------------------------ stats */}
       <View style={[styles.stats, { backgroundColor: c.surfaceRaised }]}>
@@ -139,6 +172,12 @@ export default function Me() {
           Privacy &amp; account
         </Text>
         <View style={styles.rows}>
+          <Row
+            icon="user"
+            title="Edit profile"
+            note="Picture, display name, and where you are"
+            onPress={() => router.push('/profile/edit')}
+          />
           <Row
             icon="lock"
             title="Private by default"
