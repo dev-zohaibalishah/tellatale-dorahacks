@@ -13,7 +13,7 @@
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '../../../src/components/Button';
 import {
@@ -40,7 +40,8 @@ import { track } from '../../../src/lib/analytics';
 import { copyText } from '../../../src/lib/share';
 import { useSession } from '../../../src/state/auth';
 import { useTheme } from '../../../src/state/theme';
-import { space } from '../../../src/theme/tokens';
+import { radius, space } from '../../../src/theme/tokens';
+import { type as scale } from '../../../src/theme/typography';
 import { memoryTypeLabel, perspectivesLabel } from '../../../shared/story';
 
 export default function MemoryPage() {
@@ -57,6 +58,9 @@ export default function MemoryPage() {
   const { url: imageUrl, failed: imageFailed } = useImageUrl(memory?.imagePath);
 
   const [composing, setComposing] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [savingTitle, setSavingTitle] = useState(false);
 
   const included = useMemo(() => remarks.filter((r) => r.included), [remarks]);
 
@@ -105,6 +109,22 @@ export default function MemoryPage() {
       toast(e instanceof Error ? e.message : 'The story could not be composed.', 'bad');
     } finally {
       setComposing(false);
+    }
+  }
+
+  async function saveTitle() {
+    if (!id || savingTitle || draftTitle.trim().length === 0) return;
+    setSavingTitle(true);
+    try {
+      await repository().renameMemory(id, draftTitle);
+      setRenaming(false);
+      // Fetched rather than watched, so the heading would otherwise keep the old name
+      // until this screen was left and re-entered.
+      reload();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'That could not be renamed.', 'bad');
+    } finally {
+      setSavingTitle(false);
     }
   }
 
@@ -192,7 +212,60 @@ export default function MemoryPage() {
       <PhotoPlate uri={imageUrl} failed={imageFailed} aspect={4 / 3} />
 
       <View style={styles.titleBlock}>
-        <Text variant="display">{memory.title}</Text>
+        {/* Renaming is allowed, and it is the only thing about a memory that is.
+            The original remark is immutable — a trigger refuses to change it even for
+            the owner — because it is testimony. A title is not testimony; it is what
+            you call the photograph, and the right name often only arrives after other
+            people have said what they remember. */}
+        {renaming ? (
+          <View style={styles.renameRow}>
+            <TextInput
+              value={draftTitle}
+              onChangeText={setDraftTitle}
+              autoFocus
+              maxLength={120}
+              accessibilityLabel="Title for this memory"
+              onSubmitEditing={saveTitle}
+              returnKeyType="done"
+              style={[
+                scale.display,
+                styles.renameInput,
+                { color: c.text, backgroundColor: c.surfaceRaised },
+              ]}
+            />
+            <Row gap={space.sm}>
+              <Button
+                label="Save"
+                variant="accent"
+                size="compact"
+                loading={savingTitle}
+                disabled={draftTitle.trim().length === 0 || savingTitle}
+                onPress={saveTitle}
+              />
+              <Button
+                label="Cancel"
+                variant="ghost"
+                size="compact"
+                onPress={() => setRenaming(false)}
+              />
+            </Row>
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => {
+              setDraftTitle(memory.title);
+              setRenaming(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`${memory.title}. Rename this memory`}
+            style={({ pressed }) => [styles.titleRow, pressed && { opacity: 0.8 }]}
+          >
+            <Text variant="display" style={styles.grow}>
+              {memory.title}
+            </Text>
+            <Icon name="edit" size={16} color={c.textMuted} />
+          </Pressable>
+        )}
         <Row style={styles.stampRow}>
           <Text variant="meta" tone="muted" style={styles.stamp}>
             {stamp}
@@ -382,6 +455,14 @@ export default function MemoryPage() {
 
 const styles = StyleSheet.create({
   titleBlock: { gap: space.sm },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
+  renameRow: { gap: space.md },
+  renameInput: {
+    borderRadius: radius.button,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    minHeight: 56,
+  },
   stampRow: { justifyContent: 'space-between', flexWrap: 'wrap', gap: space.sm },
   stamp: { flexShrink: 1 },
   ownerBlock: { gap: space.md },

@@ -211,6 +211,8 @@ export interface Repository {
   watchMemories(uid: string, cb: (m: Memory[]) => void): () => void;
   getMemory(id: string): Promise<Memory | null>;
   createMemory(uid: string, input: CreateMemoryInput): Promise<Memory>;
+  /** The title is the one thing about a memory the owner may rewrite later. */
+  renameMemory(id: string, title: string): Promise<void>;
   deleteMemory(id: string): Promise<void>;
   setVisibility(id: string, v: Visibility): Promise<void>;
   /** Resolves a stored image path to a short-lived, displayable URL. */

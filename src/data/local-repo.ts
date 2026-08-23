@@ -312,6 +312,16 @@ export function createLocalRepository(): Repository {
       return memory;
     },
 
+    async renameMemory(id, title) {
+      const snap = await load();
+      await save({
+        ...snap,
+        memories: snap.memories.map((m) =>
+          m.id === id ? { ...m, title: title.trim().slice(0, 120), updatedAt: Date.now() } : m
+        ),
+      });
+    },
+
     async deleteMemory(id) {
       const s = await load();
       const { [id]: _r, ...remarks } = s.remarks;

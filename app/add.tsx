@@ -72,6 +72,8 @@ export default function AddMemory() {
   const [photos, setPhotos] = useState<Picked[]>([]);
   const [mode, setMode] = useState<'type' | 'speak'>('type');
   const [story, setStory] = useState('');
+  const [title, setTitle] = useState('');
+  const [titleEdited, setTitleEdited] = useState(false);
   const [when, setWhen] = useState('');
   const [where, setWhere] = useState('');
   const [credited, setCredited] = useState('');
@@ -94,11 +96,26 @@ export default function AddMemory() {
   }, []);
 
   const cover = photos[0] ?? null;
-  // A title is not asked for — the design does not have one — so the first line of
-  // the story becomes it, which is how people naturally start ("The summer we all
-  // went to Murree...").
-  const derivedTitle = story.trim().split(/[\n.!?]/)[0]?.trim().slice(0, 120) ?? '';
-  const canPost = Boolean(cover) && story.trim().length > 0 && consent && !saving;
+  /**
+   * The title used to BE the first sentence of the story — sliced off it at post time
+   * and never shown. So every memory was called the same thing as its own opening
+   * line, the archive read as a list of half-sentences, and someone who wanted to call
+   * a photograph "Nani's last Eid" had no way to say so.
+   *
+   * It is a field now. The first line is still offered, because a blank title box on
+   * top of a blank story box is two blank boxes, and most people will not name a
+   * photograph before they have said what it is. So it fills itself in as they type,
+   * and stops the moment they touch it — a suggestion, not a decision.
+   */
+  const suggestedTitle = story.trim().split(/[\n.!?]/)[0]?.trim().slice(0, 120) ?? '';
+
+  useEffect(() => {
+    if (titleEdited) return;
+    setTitle(suggestedTitle);
+  }, [suggestedTitle, titleEdited]);
+
+  const canPost =
+    Boolean(cover) && story.trim().length > 0 && title.trim().length > 0 && consent && !saving;
 
   async function pick(source: 'library' | 'camera') {
     const result =
@@ -142,7 +159,7 @@ export default function AddMemory() {
    * and a mistaken tap on the close dot is not consent to delete it.
    */
   async function close() {
-    const hasWork = Boolean(cover) || story.trim().length > 0;
+    const hasWork = Boolean(cover) || story.trim().length > 0 || titleEdited;
     if (hasWork && !saving) {
       const ok = await confirm({
         title: 'Discard this memory?',
@@ -160,7 +177,7 @@ export default function AddMemory() {
     setSaving(true);
     try {
       const memory = await repository().createMemory(uid, {
-        title: derivedTitle || 'Untitled memory',
+        title: title.trim() || suggestedTitle || 'Untitled memory',
         // The sheet does not ask for a type; 'family' is the default the design
         // implies and it can be changed on the memory page.
         memoryType: 'family',
@@ -350,6 +367,48 @@ export default function AddMemory() {
               </View>
             )
           ) : null}
+
+          {/* -------------------------------------------------------- title */}
+          <View style={styles.titleBlock}>
+            <View style={styles.titleHead}>
+              <Text variant="label" tone="muted">
+                What do you call this one?
+              </Text>
+              {!titleEdited && title ? (
+                <Text variant="meta" tone="muted">
+                  suggested
+                </Text>
+              ) : (
+                <Text variant="meta" tone="muted">
+                  {title.length}/120
+                </Text>
+              )}
+            </View>
+
+            <TextInput
+              value={title}
+              onChangeText={(v) => {
+                // The first keystroke hands ownership over. From then on the story can
+                // change freely without the title following it around.
+                if (!titleEdited) setTitleEdited(true);
+                setTitle(v);
+              }}
+              placeholder="Nani's last Eid"
+              placeholderTextColor={c.textMuted}
+              maxLength={120}
+              accessibilityLabel="Title for this memory"
+              accessibilityHint="A name for the photograph, separate from the story below"
+              style={[
+                scale.uiStrong,
+                styles.titleInput,
+                {
+                  color: c.text,
+                  backgroundColor: c.surface,
+                  borderColor: titleEdited ? c.accent : c.hairline,
+                },
+              ]}
+            />
+          </View>
 
           {/* -------------------------------------------------------- story */}
           <TextInput
@@ -636,6 +695,14 @@ const styles = StyleSheet.create({
   },
   body: { paddingHorizontal: layout.gutter, paddingBottom: space.xxl, gap: space.base },
 
+  titleBlock: { gap: space.sm },
+  titleHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleInput: {
+    minHeight: layout.minTouchTarget,
+    borderRadius: radius.button,
+    borderWidth: 1,
+    paddingHorizontal: space.base,
+  },
   strip: { gap: space.sm },
   thumbWrap: { width: 96, height: 96 },
   thumb: { width: 96, height: 96, borderRadius: radius.image },

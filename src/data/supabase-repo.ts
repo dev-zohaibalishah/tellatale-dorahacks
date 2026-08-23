@@ -444,6 +444,16 @@ export function createSupabaseRepository(): Repository {
       return toMemory(data);
     },
 
+    async renameMemory(id, title) {
+      const trimmed = title.trim();
+      if (!trimmed) throw new Error('A memory needs a name.');
+      const { error } = await requireSupabase()
+        .from('memories')
+        .update({ title: trimmed.slice(0, 120) })
+        .eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+
     async deleteMemory(id) {
       const db = requireSupabase();
       const { data: row } = await db
