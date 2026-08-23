@@ -173,6 +173,25 @@ export interface AppNotification {
 export interface Repository {
   readonly kind: 'supabase' | 'local';
 
+  /* ---- circles, requests, faces ---- */
+  /** The circle this account owns or belongs to. Null until one is made. */
+  getCircle(uid: string): Promise<Circle | null>;
+  createCircle(uid: string, name: string): Promise<Circle>;
+  listMembers(circleId: string): Promise<CircleMember[]>;
+  addMember(circleId: string, displayName: string, relationship: string | null): Promise<CircleMember>;
+  removeMember(memberId: string): Promise<void>;
+
+  listRequests(circleId: string): Promise<MemoryRequest[]>;
+  createRequest(circleId: string, question: string): Promise<MemoryRequest>;
+  closeRequest(requestId: string): Promise<void>;
+  listAnswers(requestId: string): Promise<RequestAnswer[]>;
+  /** Links an existing memory to a question as its answer. */
+  answerRequest(requestId: string, memoryId: string): Promise<void>;
+
+  listFaceNames(memoryId: string): Promise<FaceName[]>;
+  addFaceName(memoryId: string, name: string, relationship: string | null): Promise<FaceName>;
+  removeFaceName(faceId: string): Promise<void>;
+
   /* ---- notifications ---- */
   watchNotifications(uid: string, cb: (n: AppNotification[]) => void): () => void;
   /** Marks every unread notification for the signed-in user read. */
@@ -250,4 +269,65 @@ export function assertOwnerMemoryUnchanged(
     return { ...composed, ownerMemory: original };
   }
   return composed;
+}
+
+/* ------------------------------------------------------------------ circles */
+
+/**
+ * A family, and the people in it.
+ *
+ * `Member.uid` is nullable because a member need not have an account. "Zara — Cousin"
+ * in the design is someone the family knows about and has not reached yet; a list that
+ * can only hold accounts cannot say that she exists.
+ */
+export interface Circle {
+  id: string;
+  name: string;
+  inviteToken: string;
+  isOwner: boolean;
+  createdAt: number;
+}
+
+export interface CircleMember {
+  id: string;
+  uid: string | null;
+  displayName: string;
+  relationship: string | null;
+  /** Null until they actually join. */
+  joinedAt: number | null;
+}
+
+/** A question somebody asked the family. */
+export interface MemoryRequest {
+  id: string;
+  circleId: string;
+  question: string;
+  askedByName: string;
+  askedByMe: boolean;
+  answerCount: number;
+  createdAt: number;
+  closedAt: number | null;
+}
+
+/** One answer: a memory somebody posted in reply to a question. */
+export interface RequestAnswer {
+  id: string;
+  title: string;
+  imagePath: string;
+  ownerName: string;
+  ownedByMe: boolean;
+  originalRemark: string;
+  dateHint: string | null;
+  locationHint: string | null;
+  contributorCount: number;
+  createdAt: number;
+}
+
+/** Someone named in a photograph. No detection, no coordinates — just the name. */
+export interface FaceName {
+  id: string;
+  memoryId: string;
+  name: string;
+  relationship: string | null;
+  createdAt: number;
 }

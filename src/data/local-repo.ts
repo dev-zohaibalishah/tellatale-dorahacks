@@ -25,6 +25,7 @@ import { localId, randomToken } from '../lib/id';
 import { composeLocally } from './local-composer';
 import type {
   CreateMemoryInput,
+  FaceName,
   GuestMemoryView,
   Profile,
   ProfilePatch,
@@ -52,6 +53,8 @@ interface Snapshot {
   collections: StoredCollection[];
   /** memoryId -> collectionIds */
   memberships: Record<string, string[]>;
+  /** memoryId -> the people named in that photograph. */
+  faceNames: Record<string, FaceName[]>;
 }
 
 const empty: Snapshot = {
@@ -62,6 +65,7 @@ const empty: Snapshot = {
   reactions: {},
   collections: [],
   memberships: {},
+  faceNames: {},
 };
 
 let cache: Snapshot | null = null;
@@ -115,6 +119,89 @@ function blankProfile(uid: string): Profile {
 export function createLocalRepository(): Repository {
   return {
     kind: 'local',
+
+    /* --------------------------------------------- circles, requests, faces */
+
+    // Local mode is one device with one person on it. A circle is a group, a request
+    // is a question put to other people, and a face name belongs to a photograph
+    // somebody else might recognise — none of those have a second party here. These
+    // return empty rather than seeding a pretend family, which on these screens
+    // specifically would be fabricated relatives.
+
+    async getCircle() {
+      return null;
+    },
+
+    async createCircle(_uid, name) {
+      throw new Error(`"${name}" needs a backend — circles are shared by definition.`);
+    },
+
+    async listMembers() {
+      return [];
+    },
+
+    async addMember() {
+      throw new Error('Adding someone to a circle needs a backend.');
+    },
+
+    async removeMember() {
+      // Nothing to remove.
+    },
+
+    async listRequests() {
+      return [];
+    },
+
+    async createRequest() {
+      throw new Error('Asking the family a question needs a backend.');
+    },
+
+    async closeRequest() {
+      // Nothing to close.
+    },
+
+    async listAnswers() {
+      return [];
+    },
+
+    async answerRequest() {
+      // Nothing to link.
+    },
+
+    async listFaceNames(memoryId) {
+      const s = await load();
+      return s.faceNames?.[memoryId] ?? [];
+    },
+
+    async addFaceName(memoryId, name, relationship) {
+      const snap = await load();
+      const existing = snap.faceNames?.[memoryId] ?? [];
+      if (existing.some((f) => f.name.toLowerCase() === name.trim().toLowerCase())) {
+        throw new Error(`${name.trim()} is already named in this photo.`);
+      }
+      const face = {
+        id: localId('face'),
+        memoryId,
+        name: name.trim(),
+        relationship: relationship?.trim() || null,
+        createdAt: Date.now(),
+      };
+      await save({
+        ...snap,
+        faceNames: { ...(snap.faceNames ?? {}), [memoryId]: [...existing, face] },
+      });
+      return face;
+    },
+
+    async removeFaceName(faceId) {
+      const snap = await load();
+      const next: Record<string, FaceName[]> = {};
+      for (const [memoryId, list] of Object.entries(snap.faceNames ?? {})) {
+        next[memoryId] = list.filter((f) => f.id !== faceId);
+      }
+      await save({ ...snap, faceNames: next });
+    },
+
 
     /* ----------------------------------------------------- notifications */
 

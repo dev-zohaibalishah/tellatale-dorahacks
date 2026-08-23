@@ -23,6 +23,7 @@ import {
 import { readImageBytes } from '../lib/image-bytes';
 import { buildInviteUrl } from '../lib/links';
 import { randomToken, uuid } from '../lib/id';
+import * as circles from './supabase-circles';
 import type {
   AppNotification,
   CreateMemoryInput,
@@ -185,6 +186,11 @@ async function mirrorToAuthMetadata(p: Profile): Promise<void> {
 export function createSupabaseRepository(): Repository {
   return {
     kind: 'supabase',
+
+    // Circles, requests and face names live in their own module — see the note at
+    // the top of supabase-circles.ts.
+    ...circles,
+
 
     /* ----------------------------------------------------- notifications */
 
