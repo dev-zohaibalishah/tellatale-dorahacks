@@ -1,6 +1,6 @@
 # Cursor prompt — apply every pending migration and rebuild
 
-Three migrations are now waiting, and a native rebuild is required for dictation.
+Four migrations are now waiting, and a native rebuild is required for dictation.
 Copy everything inside the fence into Cursor's chat (Agent mode, this repo open).
 
 ---
@@ -68,7 +68,23 @@ appeared to do nothing.
 
 3. get_advisors with type "security". Show me anything new.
 
-## Step 4 — Redeploy guest-memory
+## Step 4 — The circles migration
+
+  supabase/migrations/20260825090000_circles_requests_faces.sql
+
+Apply it with apply_migration, named "circles_requests_faces". It adds circles,
+circle_members, memory_requests, face_names, a request_id column on memories, and the
+policies for all of them.
+
+Read the header comment before you touch anything in it. The read boundary is drawn
+deliberately narrowly: joining a circle lets a member read the memories posted as
+answers to that circle's questions, and nothing else. Do not widen it to "members can
+read each other's memories" — that turns joining a family into a licence to browse
+somebody's private archive.
+
+After applying, confirm with get_advisors type "security" and show me anything new.
+
+## Step 5 — Redeploy guest-memory
 
 The contributor screen now reads the accounts behind a published story, and the
 function that serves them changed. Redeploy it:
@@ -84,7 +100,7 @@ the contributors. Set that memory back to private and POST again — "accounts" 
 empty and no contributor name may appear anywhere in the payload. Show me both
 responses.
 
-## Step 5 — Rebuild for dictation
+## Step 6 — Rebuild for dictation
 
 "Speak it" now uses expo-speech-recognition. It is a native module and RECORD_AUDIO
 is no longer blocked in app.config.ts, so Expo Go and the existing dev build cannot
