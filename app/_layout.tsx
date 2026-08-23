@@ -18,6 +18,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { FeedbackProvider } from '../src/components/feedback';
+import { useNotificationRouting } from '../src/push/useNotificationRouting';
 import { WELCOME_SEEN_KEY } from './(auth)/welcome';
 import { AuthProvider, useSession } from '../src/state/auth';
 import { ProfileProvider } from '../src/state/profile';
@@ -70,6 +71,8 @@ function Shell() {
   const { c, name } = useTheme();
   const { ready } = useSession();
   useAuthGate();
+  // A tapped notification opens the memory it is about, not just the app.
+  useNotificationRouting();
 
   // Hold the splash until the stored session has been checked, so a returning user
   // never sees the sign-in screen flash before their own library appears.

@@ -24,6 +24,7 @@ import { supabase } from '../supabase/client';
 import { useLocalBackend } from '../data';
 import { localId } from '../lib/id';
 import { emailForUsername } from '../lib/username';
+import { unregisterPush } from '../push/register';
 
 const LOCAL_UID_KEY = 'tellatale.local.uid';
 const LOCAL_NAME_KEY = 'tellatale.local.name';
@@ -192,6 +193,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setDisplayName(null);
       return;
     }
+
+    /**
+     * Drop this device's push token before dropping the session — in that order,
+     * because the delete is authorised by RLS against the row's `user_id`, and after
+     * `signOut` there is no `auth.uid()` left to match it.
+     *
+     * `unregisterPush` existed, documented itself as "called on sign-out", and was
+     * called by nothing. So signing out on a borrowed or shared phone left the token
+     * registered: the next person to hold it kept receiving notifications naming
+     * someone else's memories and the people contributing to them.
+     */
+    await unregisterPush();
     await supabase.auth.signOut();
   }, []);
 

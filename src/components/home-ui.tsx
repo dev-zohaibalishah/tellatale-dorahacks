@@ -29,7 +29,7 @@ export function Avatar({
   size?: number;
 }) {
   const { c } = useTheme();
-  const initial = (name ?? '?').trim().charAt(0).toUpperCase();
+  const initial = (name ?? '').trim().charAt(0).toUpperCase();
 
   return (
     <View
@@ -40,10 +40,17 @@ export function Avatar({
     >
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
-      ) : (
+      ) : initial ? (
         <Text variant="meta" tone="muted" style={{ fontSize: size * 0.4 }}>
           {initial}
         </Text>
+      ) : (
+        // A silhouette, not a "?".
+        //
+        // The feed draws one of these per contributor without loading their names —
+        // the count is known, the identities are not. A row of question marks reads
+        // as data the app has lost, rather than people it has not looked up.
+        <Icon name="user" size={size * 0.5} color={c.textMuted} />
       )}
     </View>
   );

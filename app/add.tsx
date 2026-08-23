@@ -33,7 +33,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../src/components/Button';
-import { useToast } from '../src/components/feedback';
+import { useConfirm, useToast } from '../src/components/feedback';
 import { Icon, type IconName } from '../src/components/icons';
 import { Text } from '../src/components/Text';
 import { repository } from '../src/data';
@@ -54,6 +54,7 @@ interface Picked {
 export default function AddMemory() {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const insets = useSafeAreaInsets();
   const { uid } = useSession();
   const { c } = useTheme();
@@ -101,7 +102,34 @@ export default function AddMemory() {
     }
 
     haptics.selected();
-    setPhotos((p) => [...p, out]);
+    // One photograph, replaced rather than appended.
+    //
+    // The strip used to accept any number, badge the first "Cover", and then post
+    // only that one — the rest were dropped on submit with nothing said. A memory is
+    // built around a single image all the way down: `memories.image_path` is one
+    // column, the story composer reasons about one picture, and the guest screen shows
+    // one. Accepting more was an affordance the whole product cannot honour.
+    setPhotos([out]);
+  }
+
+  /**
+   * Closing this sheet after typing used to throw the memory away without a word.
+   * That is the one thing this screen must not do: the text box is where somebody
+   * writes down what they remember about a photograph of a person who may be gone,
+   * and a mistaken tap on the close dot is not consent to delete it.
+   */
+  async function close() {
+    const hasWork = Boolean(cover) || story.trim().length > 0;
+    if (hasWork && !saving) {
+      const ok = await confirm({
+        title: 'Discard this memory?',
+        body: 'The photo and what you have written here have not been posted yet.',
+        confirmLabel: 'Discard',
+        destructive: true,
+      });
+      if (!ok) return;
+    }
+    router.back();
   }
 
   async function post() {
@@ -140,7 +168,7 @@ export default function AddMemory() {
         {/* ------------------------------------------------------------ head */}
         <View style={styles.head}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={close}
             accessibilityRole="button"
             accessibilityLabel="Close"
             hitSlop={8}
@@ -163,14 +191,12 @@ export default function AddMemory() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.strip}
           >
-            {photos.map((p, i) => (
+            {/* A "Cover" badge only means something when there is a second photo for
+                it to be the cover of. With one, it was labelling the only thing on
+                screen. */}
+            {photos.map((p) => (
               <View key={p.uri} style={styles.thumbWrap}>
                 <Image source={{ uri: p.uri }} style={styles.thumb} contentFit="cover" />
-                {i === 0 ? (
-                  <View style={[styles.coverTag, { backgroundColor: c.surface }]}>
-                    <Text variant="meta">Cover</Text>
-                  </View>
-                ) : null}
                 <Pressable
                   onPress={() => setPhotos((all) => all.filter((x) => x.uri !== p.uri))}
                   accessibilityRole="button"
@@ -186,19 +212,19 @@ export default function AddMemory() {
             <Pressable
               onPress={() => pick('library')}
               accessibilityRole="button"
-              accessibilityLabel="Add photo"
+              accessibilityLabel={cover ? 'Choose a different photo' : 'Add photo'}
               style={[styles.addPhoto, { borderColor: c.hairline }]}
             >
               <Icon name="image" size={20} color={c.textMuted} />
               <Text variant="meta" tone="muted">
-                Add photo
+                {cover ? 'Replace' : 'Add photo'}
               </Text>
             </Pressable>
 
             <Pressable
               onPress={() => pick('camera')}
               accessibilityRole="button"
-              accessibilityLabel="Take a photo"
+              accessibilityLabel={cover ? 'Take a different photo' : 'Take a photo'}
               style={[styles.addPhoto, { borderColor: c.hairline }]}
             >
               <Icon name="camera" size={20} color={c.textMuted} />
@@ -522,14 +548,6 @@ const styles = StyleSheet.create({
   strip: { gap: space.sm },
   thumbWrap: { width: 96, height: 96 },
   thumb: { width: 96, height: 96, borderRadius: radius.image },
-  coverTag: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
   removeDot: {
     position: 'absolute',
     top: 4,

@@ -199,7 +199,7 @@ export default function Me() {
       </View>
 
       <Text variant="meta" tone="muted" center>
-        Heirloom · Private by default, forever
+        TellaTale · Private by default, forever
       </Text>
     </TabScreen>
   );
