@@ -4,13 +4,23 @@
     {
       "name": "tellatale-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--clear"
+      ],
       "autoPort": true
     },
     {
       "name": "tellatale-web-alt",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--clear"
+      ],
       "autoPort": true
     }
   ]

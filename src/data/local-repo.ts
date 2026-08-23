@@ -116,6 +116,20 @@ export function createLocalRepository(): Repository {
   return {
     kind: 'local',
 
+    /* ----------------------------------------------------- notifications */
+
+    watchNotifications(_uid, cb) {
+      // Local mode is one device with no second person on it. A notification is by
+      // definition news of somebody else, so there is never anything to report here —
+      // and inventing a sample one would put fabricated family activity on the most
+      // credulous screen in the app. The empty state explains itself.
+      return subscribe(() => cb([]));
+    },
+
+    async markNotificationsRead() {
+      // Nothing to mark.
+    },
+
     /* ----------------------------------------------------------- profile */
 
     async getProfile(uid) {

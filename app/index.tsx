@@ -30,7 +30,7 @@ import { MemoryFeedCard } from '../src/components/MemoryFeedCard';
 import { TabBar, type TabKey } from '../src/components/TabBar';
 import { Text } from '../src/components/Text';
 import { useLocalBackend } from '../src/data';
-import { useImageUrl, useMemories } from '../src/hooks/repo';
+import { useImageUrl, useMemories, useNotifications } from '../src/hooks/repo';
 import { track } from '../src/lib/analytics';
 import { usePushRegistration } from '../src/push/usePushRegistration';
 import { useSession } from '../src/state/auth';
@@ -59,6 +59,7 @@ export default function Home() {
   const { c } = useTheme();
 
   const { data: memories, loading } = useMemories(uid);
+  const { data: notifications } = useNotifications(uid);
   usePushRegistration(uid);
 
   const [tab, setTab] = useState<TabKey>('home');
@@ -80,6 +81,7 @@ export default function Home() {
     [memories]
   );
 
+  const unreadCount = notifications.filter((n) => n.readAt === null).length;
   const firstName = nameFor(profile).split(' ')[0];
 
   return (
@@ -103,11 +105,25 @@ export default function Home() {
           <Pressable
             onPress={() => router.push('/notifications')}
             accessibilityRole="button"
-            accessibilityLabel="Notifications"
+            accessibilityLabel={
+              unreadCount > 0
+                ? `Notifications, ${unreadCount} unread`
+                : 'Notifications'
+            }
             hitSlop={8}
             style={styles.bell}
           >
             <Icon name="bell" size={22} color={c.text} />
+            {/* A count, not just a dot. "Someone added something" and "four people
+                did" are different enough to be worth the pixels — and this is the
+                number the whole product is trying to move. */}
+            {unreadCount > 0 ? (
+              <View style={[styles.badge, { backgroundColor: c.accent, borderColor: c.ink }]}>
+                <Text variant="meta" style={{ color: c.onAccent, fontSize: 10 }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            ) : null}
           </Pressable>
 
           <Pressable
@@ -234,6 +250,18 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   grow: { flex: 1 },
   bell: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   promptBlock: { gap: space.sm },
   section: { gap: space.md },
   todoRow: { gap: space.sm, paddingVertical: 2 },

@@ -22,8 +22,9 @@ import {
 } from '../../shared/story';
 import { readImageBytes } from '../lib/image-bytes';
 import { buildInviteUrl } from '../lib/links';
-import { randomToken } from '../lib/id';
+import { randomToken, uuid } from '../lib/id';
 import type {
+  AppNotification,
   CreateMemoryInput,
   GuestMemoryView,
   Profile,
@@ -116,6 +117,18 @@ async function callFunction<T>(name: string, body: Record<string, unknown>): Pro
   return data as T;
 }
 
+function toNotification(r: Row): AppNotification {
+  return {
+    id: r.id,
+    memoryId: r.memory_id,
+    kind: r.kind,
+    actorName: r.actor_name ?? null,
+    preview: r.preview ?? null,
+    readAt: ms(r.read_at),
+    createdAt: ms(r.created_at) ?? Date.now(),
+  };
+}
+
 function toProfile(r: Row): Profile {
   return {
     uid: r.id,
@@ -173,6 +186,58 @@ export function createSupabaseRepository(): Repository {
   return {
     kind: 'supabase',
 
+    /* ----------------------------------------------------- notifications */
+
+    watchNotifications(uid, cb) {
+      const db = requireSupabase();
+
+      const load = async () => {
+        const { data, error } = await db
+          .from('notifications')
+          .select('id, memory_id, kind, actor_name, preview, read_at, created_at')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          // A notification list is a recent-events list. Someone with a very active
+          // archive does not need three years of it on one screen, and an unbounded
+          // select is a query that gets slower every week it runs.
+          .limit(100);
+        if (error) throw new Error(error.message);
+        cb((data ?? []).map(toNotification));
+      };
+
+      void load();
+
+      // Watched, not fetched. A contribution arriving from someone else's phone
+      // should light up the bell while the owner is looking at it — that moment is
+      // the product working, and making them pull to refresh to see it is a waste of
+      // the one event worth celebrating.
+      const channel = db
+        .channel(`notifications:${uid}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${uid}`,
+          },
+          () => void load()
+        )
+        .subscribe();
+
+      return () => {
+        void db.removeChannel(channel);
+      };
+    },
+
+    async markNotificationsRead() {
+      // A security-definer RPC rather than an update: the function pins user_id to
+      // auth.uid() in its own body, so there is no argument a caller could aim at
+      // somebody else's rows.
+      const { error } = await requireSupabase().rpc('mark_notifications_read');
+      if (error) throw new Error(error.message);
+    },
+
     /* ----------------------------------------------------------- profile */
 
     getProfile: loadProfile,
@@ -219,7 +284,7 @@ export function createSupabaseRepository(): Repository {
       // URLs are cached by the image layer and by the CDN, and reusing the path meant
       // a user changed their picture and kept seeing the old one for fifteen minutes,
       // which is indistinguishable from the save having failed.
-      const path = `${uid}/${globalThis.crypto.randomUUID()}.jpg`;
+      const path = `${uid}/${uuid()}.jpg`;
 
       const image = await readImageBytes(localImageUri);
       const { error: uploadError } = await db.storage
@@ -335,7 +400,7 @@ export function createSupabaseRepository(): Repository {
       const db = requireSupabase();
 
       // Upload first. A row pointing at a missing object is worse than no row.
-      const memoryId = globalThis.crypto.randomUUID();
+      const memoryId = uuid();
       const path = `${uid}/${memoryId}/original.jpg`;
 
       // Platform-aware: a Blob in the browser, raw bytes on device. See lib/image-bytes.

@@ -129,8 +129,31 @@ export interface ProfilePatch {
   location?: string | null;
 }
 
+/**
+ * Something a person did to one of your memories.
+ *
+ * `actorName` is a copy, not a reference. Most contributors have no account, and even
+ * for one who does, the name that belongs on this event is the name they used at the
+ * time — not whatever they call themselves now.
+ */
+export interface AppNotification {
+  id: string;
+  memoryId: string;
+  kind: 'remark_added' | 'reaction_added';
+  actorName: string | null;
+  /** A short quote of what they wrote, or the reaction they chose. */
+  preview: string | null;
+  readAt: number | null;
+  createdAt: number;
+}
+
 export interface Repository {
   readonly kind: 'supabase' | 'local';
+
+  /* ---- notifications ---- */
+  watchNotifications(uid: string, cb: (n: AppNotification[]) => void): () => void;
+  /** Marks every unread notification for the signed-in user read. */
+  markNotificationsRead(): Promise<void>;
 
   /* ---- profile ---- */
   getProfile(uid: string): Promise<Profile | null>;

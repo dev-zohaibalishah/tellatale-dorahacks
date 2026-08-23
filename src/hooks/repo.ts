@@ -14,7 +14,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { repository } from '../data';
-import type { GuestMemoryView } from '../data/repository';
+import type { AppNotification, GuestMemoryView } from '../data/repository';
 import type { Memory, Remark, StoryDoc } from '../../shared/story';
 
 export interface Async<T> {
@@ -205,4 +205,55 @@ export function useGuestMemory(token: string | undefined): Async<GuestMemoryView
   }, [token, nonce]);
 
   return { ...state, reload: useCallback(() => setNonce((n) => n + 1), []) };
+}
+
+/**
+ * The owner's notification feed, live.
+ *
+ * Watched rather than fetched for the same reason remarks are: a contribution
+ * arriving from someone else's phone should reach the bell while the owner is
+ * holding theirs.
+ */
+export function useNotifications(uid: string | null): Async<AppNotification[]> {
+  const [state, setState] = useState<Async<AppNotification[]>>({
+    data: [],
+    loading: true,
+    error: null,
+  });
+
+  /**
+   * Realtime is the fast path, not the only one.
+   *
+   * postgres_changes delivery depends on the table being in the supabase_realtime
+   * publication and on the socket carrying a valid token — infrastructure that fails
+   * silently when it is wrong, which is exactly how this app shipped for weeks with
+   * an empty publication and four subscriptions that never fired. Re-subscribing on
+   * focus means the unread badge is correct every time the screen is looked at, and
+   * realtime only decides whether it is also correct in between.
+   */
+  const [nonce, setNonce] = useState(0);
+  const mounted = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (mounted.current) setNonce((n) => n + 1);
+      mounted.current = true;
+    }, [])
+  );
+
+  useEffect(() => {
+    if (!uid) {
+      setState({ data: [], loading: false, error: null });
+      return;
+    }
+    try {
+      return repository().watchNotifications(uid, (items) =>
+        setState({ data: items, loading: false, error: null })
+      );
+    } catch (e) {
+      setState({ data: [], loading: false, error: message(e) });
+      return;
+    }
+  }, [uid, nonce]);
+
+  return state;
 }
