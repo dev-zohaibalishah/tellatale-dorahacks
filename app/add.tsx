@@ -19,7 +19,7 @@
 import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -59,6 +59,10 @@ interface Picked {
 
 export default function AddMemory() {
   const router = useRouter();
+  // Set when this sheet was opened from a question. Posting then links the memory to
+  // it, which is what makes the memory readable by the rest of the circle — so it is
+  // carried explicitly rather than inferred from navigation history.
+  const { requestId } = useLocalSearchParams<{ requestId?: string }>();
   const toast = useToast();
   const confirm = useConfirm();
   const insets = useSafeAreaInsets();
@@ -169,6 +173,22 @@ export default function AddMemory() {
         creditedTo: creditOn && credited.trim() ? credited.trim() : null,
         permissionConfirmed: true,
       });
+      if (requestId) {
+        // Linked after the memory exists, not during creation: a failure here should
+        // leave them with their memory saved and an unlinked answer, never with the
+        // photo lost because the link failed.
+        try {
+          await repository().answerRequest(requestId, memory.id);
+        } catch {
+          toast('Memory saved, but it could not be attached to the question.', 'bad');
+          router.replace({ pathname: '/memory/[id]', params: { id: memory.id } });
+          return;
+        }
+        toast('Answered.', 'good');
+        router.replace({ pathname: '/requests/[id]', params: { id: requestId } });
+        return;
+      }
+
       toast('Memory posted.', 'good');
       router.replace({ pathname: '/memory/[id]', params: { id: memory.id } });
     } catch (e) {
@@ -202,7 +222,9 @@ export default function AddMemory() {
           >
             <Icon name="close" size={18} color={c.text} />
           </Pressable>
-          <Text variant="heading">Add a memory</Text>
+          <Text variant="heading">
+            {requestId ? 'Answer the question' : 'Add a memory'}
+          </Text>
           <View style={styles.closeDot} />
         </View>
 

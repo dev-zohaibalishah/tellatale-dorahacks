@@ -22,6 +22,7 @@ import {
   Avatar,
   ComposeBar,
   FeedFilterRow,
+  QuestionCard,
   type FeedFilterKey,
   SectionRow,
   TodoChip,
@@ -32,6 +33,7 @@ import { MemoryFeedCard } from '../src/components/MemoryFeedCard';
 import { TabBar, type TabKey } from '../src/components/TabBar';
 import { Text } from '../src/components/Text';
 import { useLocalBackend } from '../src/data';
+import { useCircle, useFlashbacks, useRequests } from '../src/hooks/circle';
 import { useImageUrl, useMemories, useNotifications } from '../src/hooks/repo';
 import { track } from '../src/lib/analytics';
 import { usePushRegistration } from '../src/push/usePushRegistration';
@@ -62,6 +64,8 @@ export default function Home() {
 
   const { data: memories, loading } = useMemories(uid);
   const { data: notifications } = useNotifications(uid);
+  const { data: circle } = useCircle(uid);
+  const { data: requests } = useRequests(circle?.id);
   usePushRegistration(uid);
 
   const [tab, setTab] = useState<TabKey>('home');
@@ -101,6 +105,14 @@ export default function Home() {
       filter === 'public' ? m.visibility === 'public' : m.visibility !== 'public'
     );
   }, [memories, filter]);
+
+  const flashbacks = useFlashbacks(memories);
+
+  // Every count on this row is derived from something already loaded. The design
+  // shows numbers on these chips and the temptation is to invent them; a chip that
+  // says 12 when nothing counts to 12 is the first thing a user stops believing.
+  const openRequests = requests.filter((r) => r.closedAt === null);
+  const unnamedNote = memories.length;
 
   const unreadCount = notifications.filter((n) => n.readAt === null).length;
   const firstName = nameFor(profile).split(' ')[0];
@@ -159,7 +171,7 @@ export default function Home() {
         {/* ------------------------------------------------- circle + prompt */}
         <View style={styles.promptBlock}>
           <Text variant="eyebrow" tone="muted">
-            Your circle
+            {circle?.name ?? 'Your circle'}
           </Text>
           <Text variant="title">What will you remember today?</Text>
         </View>
@@ -177,11 +189,27 @@ export default function Home() {
             <TodoChip
               icon="comment"
               label="Requests"
-              dot={false}
-              onPress={() => router.push('/notifications')}
+              count={openRequests.length || undefined}
+              dot={openRequests.length > 0}
+              onPress={() => router.push('/requests')}
             />
-            <TodoChip icon="tag" label="Tag faces" onPress={() => router.push('/people')} />
-            <TodoChip icon="sparkle" label="Flashbacks" onPress={() => router.push('/explore')} />
+            <TodoChip
+              icon="tag"
+              label="Tag faces"
+              count={unnamedNote || undefined}
+              onPress={() => router.push('/faces')}
+            />
+            <TodoChip
+              icon="sparkle"
+              label="Flashbacks"
+              count={flashbacks.length || undefined}
+              onPress={() => router.push('/flashbacks')}
+            />
+            <TodoChip
+              icon="share"
+              label="Invite"
+              onPress={() => router.push('/invite')}
+            />
           </ScrollView>
 
           {/* A second layer, and a different job. The row above navigates away; this
@@ -190,10 +218,21 @@ export default function Home() {
         </View>
 
         {/* ------------------------------------------------ waiting question
-            Memory Requests are designed but not yet in the schema, so this only
-            appears once there is a real one to show. Rendering a placeholder here
-            would be inventing family activity, which is the one thing this product
-            must never do. */}
+            Shown only when one is genuinely open. The newest is the one worth
+            interrupting for; the rest are a tap away on the requests screen. */}
+        {openRequests.length > 0 ? (
+          <QuestionCard
+            question={openRequests[0].question}
+            asker={openRequests[0].askedByMe ? 'You' : openRequests[0].askedByName}
+            answered={openRequests[0].answerCount}
+            onAnswer={() =>
+              router.push({
+                pathname: '/requests/[id]',
+                params: { id: openRequests[0].id },
+              })
+            }
+          />
+        ) : null}
 
         {/* --------------------------------------------------------- feed */}
         <View style={styles.section}>

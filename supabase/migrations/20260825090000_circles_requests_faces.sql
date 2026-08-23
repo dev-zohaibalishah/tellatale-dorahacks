@@ -241,3 +241,77 @@ create policy face_names_all_own on public.face_names
     exists (select 1 from public.memories m
              where m.id = memory_id and m.owner_id = (select auth.uid()))
   );
+
+/* ------------------------------------------------- names inside a circle */
+
+/*
+ * A member can read the display name of the people in their circle.
+ *
+ * Without this the screens are technically correct and socially useless: every
+ * question reads "Someone asked", every answer is "from Someone", because
+ * `profiles_select_own` means an account can only ever read its own row. The one
+ * thing a family screen must be able to do is say who.
+ *
+ * Deliberately scoped to shared circles rather than "any authenticated user", and it
+ * exposes exactly what the other person chose to be called. The username, the bio and
+ * the avatar path are not reachable through this — those stay on the owner-only
+ * policy, and this one grants nothing on top of it.
+ */
+create or replace function public.shares_circle_with(p_user uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select exists (
+    select 1
+      from public.circles c
+      left join public.circle_members mine
+             on mine.circle_id = c.id
+            and mine.user_id = auth.uid()
+            and mine.joined_at is not null
+      left join public.circle_members theirs
+             on theirs.circle_id = c.id
+            and theirs.user_id = p_user
+            and theirs.joined_at is not null
+     where (c.owner_id = auth.uid() or mine.id is not null)
+       and (c.owner_id = p_user or theirs.id is not null)
+  );
+$$;
+
+revoke all on function public.shares_circle_with(uuid) from public;
+grant execute on function public.shares_circle_with(uuid) to authenticated;
+
+create policy profiles_select_circle on public.profiles
+  for select to authenticated
+  using (public.shares_circle_with(id));
+
+/* ----------------------------------------------- the photograph behind an answer */
+
+/*
+ * A circle member can read the image file of an answer, exactly as they can read the
+ * row.
+ *
+ * Found by running the flow across two accounts rather than by reading the policy:
+ * the answer rendered — title, words, date, attribution — with "This image could not
+ * be loaded" where the photograph belongs. Storage scopes reads to the caller's own
+ * uid prefix, and an answer lives under the uid of whoever posted it.
+ *
+ * A memory without its photograph is not a memory, so a rule that shares the row and
+ * withholds the picture shares nothing worth having. The condition below is the same
+ * one the row policy uses, applied to the object path — object names are
+ * `<owner_uid>/<memory_id>/original.jpg`, so the second segment is the memory.
+ */
+create policy memories_objects_select_circle_answer on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'memories'
+    and exists (
+      select 1
+        from public.memories m
+        join public.memory_requests r on r.id = m.request_id
+       where m.id::text = (storage.foldername(name))[2]
+         and public.is_circle_member(r.circle_id)
+    )
+  );

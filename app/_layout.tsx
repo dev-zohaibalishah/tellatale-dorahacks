@@ -111,6 +111,12 @@ function Shell() {
         <Stack.Screen name="me" options={{ animation: 'none' }} />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="shared" />
+        <Stack.Screen name="requests/index" />
+        <Stack.Screen name="requests/[id]" />
+        <Stack.Screen name="requests/ask" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="faces" />
+        <Stack.Screen name="flashbacks" />
+        <Stack.Screen name="invite" />
         <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="collection/new" options={{ presentation: 'modal' }} />
