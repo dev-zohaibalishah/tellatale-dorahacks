@@ -189,6 +189,7 @@ function TabLink({
       }}
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
+      aria-selected={active}
       accessibilityLabel={label}
       style={[styles.tabLink, active && { borderBottomColor: c.text }]}
     >

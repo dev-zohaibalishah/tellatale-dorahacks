@@ -418,6 +418,7 @@ function SegmentButton({
       }}
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
+      aria-selected={active}
       accessibilityLabel={label}
       style={[styles.segButton, active && { backgroundColor: c.surface }]}
     >

@@ -112,6 +112,9 @@ export function ChoiceRow<T extends string>({
               }}
               accessibilityRole="radio"
               accessibilityState={{ selected: active }}
+              // Same web gap as the tabs: a radio with no aria-checked is a group
+              // where every option sounds identical.
+              aria-checked={active}
               accessibilityLabel={ch.label}
               style={[
                 styles.chip,

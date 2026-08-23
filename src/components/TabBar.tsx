@@ -60,6 +60,9 @@ export function TabBar({
         }}
         accessibilityRole="tab"
         accessibilityState={{ selected }}
+        // react-native-web drops accessibilityState.selected for role=tab, so the
+        // bottom navigation announced four tabs and never which one you were on.
+        aria-selected={selected}
         accessibilityLabel={tab.label}
         style={styles.tab}
       >

@@ -112,6 +112,7 @@ export function CollectionPicker({
                 key={col.id}
                 onPress={() => toggle(col.id)}
                 accessibilityRole="checkbox"
+                aria-checked={on}
                 accessibilityState={{ checked: on }}
                 accessibilityLabel={col.name}
                 style={({ pressed }) => [

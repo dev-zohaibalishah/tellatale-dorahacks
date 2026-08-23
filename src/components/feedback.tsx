@@ -162,8 +162,15 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
               accessibilityLabel="Dismiss"
               onPress={() => settle(false)}
             >
-              {/* Stop the scrim's press from closing when the sheet itself is tapped. */}
+              {/* Stop the scrim's press from closing when the sheet itself is tapped.
+                  `accessible={false}` because a Pressable is accessible by default,
+                  which collapsed the entire dialog — title, body and both buttons —
+                  into a single node. On the confirm dialog specifically that meant a
+                  screen reader user heard "Delete this memory?" as one unbroken blob
+                  and could not reliably reach Cancel. This element is a gesture trap,
+                  not a control, and should not be in the reading order at all. */}
               <Pressable
+                accessible={false}
                 onPress={() => undefined}
                 style={[
                   styles.dialog,

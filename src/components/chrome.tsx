@@ -155,6 +155,12 @@ export function ToggleRow({
       accessibilityLabel={title}
       accessibilityHint={disabled ? disabledReason : body}
       accessibilityState={{ checked: value, disabled: Boolean(disabled) }}
+      // react-native-web maps accessibilityState.disabled onto aria-disabled but
+      // drops `checked` — verified in the browser, where this element announced as a
+      // switch with no state at all. This is the publish control: "Private" versus
+      // "Anyone with the link" is the single most consequential bit in the app, and a
+      // screen reader was being told the label and not the answer.
+      aria-checked={value}
       style={({ pressed }) => [
         styles.toggleRow,
         (pressed || disabled) && { opacity: 0.7 },
