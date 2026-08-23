@@ -20,7 +20,7 @@ import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -44,6 +44,7 @@ import {
 } from '../src/hooks/useDictation';
 import * as haptics from '../src/lib/haptics';
 import { useSession } from '../src/state/auth';
+import { promptFor, readSetup } from '../src/state/onboarding';
 import { useTheme } from '../src/state/theme';
 import { fonts, type as scale } from '../src/theme/typography';
 import { layout, radius, space } from '../src/theme/tokens';
@@ -80,6 +81,13 @@ export default function AddMemory() {
   const dictation = useDictation((said) => setStory((prev) => appendTranscript(prev, said)));
   const canDictate = useMemo(() => dictationAvailable(), []);
   const listening = dictation.status === 'listening';
+
+  // Setup asked what they would add first; this is where that answer is spent. The
+  // generic placeholder is the fallback, so a skipped question costs nothing.
+  const [prompt, setPrompt] = useState(promptFor(null));
+  useEffect(() => {
+    void readSetup().then((s) => setPrompt(promptFor(s.first)));
+  }, []);
 
   const cover = photos[0] ?? null;
   // A title is not asked for — the design does not have one — so the first line of
@@ -325,7 +333,7 @@ export default function AddMemory() {
           <TextInput
             value={story}
             onChangeText={setStory}
-            placeholder="What's the story? Who's in it, where were you, what do you remember..."
+            placeholder={prompt}
             placeholderTextColor={c.textMuted}
             multiline
             maxLength={2000}

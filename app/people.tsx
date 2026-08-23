@@ -13,7 +13,7 @@
  */
 
 import { useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '../src/components/Button';
@@ -27,6 +27,7 @@ import { useMemories } from '../src/hooks/repo';
 import * as haptics from '../src/lib/haptics';
 import { useSession } from '../src/state/auth';
 import { nameFor, useProfile } from '../src/state/profile';
+import { readSetup, type CircleGroup } from '../src/state/onboarding';
 import { useTheme } from '../src/state/theme';
 import { radius, space } from '../src/theme/tokens';
 
@@ -39,6 +40,13 @@ export default function People() {
   const { data: memories, loading } = useMemories(uid);
   const { c } = useTheme();
   const [tab, setTab] = useState<Tab>('tagged');
+
+  // Read back from setup. Saying who they told us they were collecting for is the
+  // only thing that makes that question worth having asked.
+  const [circle, setCircle] = useState<CircleGroup[]>([]);
+  useEffect(() => {
+    void readSetup().then((s) => setCircle(s.circle));
+  }, []);
 
   const totalContributions = useMemo(
     () => memories.reduce((n, m) => n + m.contributorCount, 0),
@@ -84,6 +92,15 @@ export default function People() {
           <Text variant="body" tone="muted">
             Everyone who appears in your photos — whether they use the app or not.
           </Text>
+
+          {circle.length > 0 ? (
+            <View style={[styles.note, { backgroundColor: c.surfaceRaised }]}>
+              <Text variant="label" tone="muted">
+                You said you&apos;re collecting for {circle.join(', ').toLowerCase()}.
+                Invite them from any memory and their words land beside yours.
+              </Text>
+            </View>
+          ) : null}
 
           {/* Face tagging is designed but not yet in the schema, so the only person
               this screen can name truthfully is the account holder. */}

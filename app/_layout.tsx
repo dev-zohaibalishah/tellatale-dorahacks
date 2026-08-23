@@ -20,6 +20,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { FeedbackProvider } from '../src/components/feedback';
 import { useNotificationRouting } from '../src/push/useNotificationRouting';
 import { WELCOME_SEEN_KEY } from './(auth)/welcome';
+import { isSetupPending } from '../src/state/onboarding';
 import { AuthProvider, useSession } from '../src/state/auth';
 import { ProfileProvider } from '../src/state/profile';
 import { ThemeProvider, useTheme } from '../src/state/theme';
@@ -62,7 +63,16 @@ function useAuthGate() {
       // First run gets the pitch; everyone else goes straight to the gate.
       router.replace(welcomeSeen ? '/(auth)/sign-in' : '/(auth)/welcome');
     } else if (uid && inAuthGroup) {
-      router.replace('/');
+      // Read at the moment of the decision, not from cached state.
+      //
+      // The flag is written by the sign-up screen moments before the session lands,
+      // so anything this effect captured on a previous render is stale by exactly the
+      // interval that matters — and a stale 'false' sends a brand-new account past
+      // setup and into an empty archive, which is the one thing setup exists to
+      // prevent. This guard is also the only navigator on this path; the sign-up
+      // screen deliberately does not route, because two of them racing is how the
+      // bug arrived.
+      void isSetupPending().then((pending) => router.replace(pending ? '/setup' : '/'));
     }
   }, [uid, ready, welcomeSeen, segments, router]);
 }
@@ -92,6 +102,8 @@ function Shell() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)/welcome" options={{ animation: 'fade' }} />
+        <Stack.Screen name="(auth)/tour" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="setup" options={{ animation: 'slide_from_right', gestureEnabled: false }} />
         <Stack.Screen name="(auth)/sign-in" options={{ animation: 'fade' }} />
         <Stack.Screen name="(auth)/sign-up" options={{ animation: 'fade' }} />
         <Stack.Screen name="explore" options={{ animation: 'none' }} />

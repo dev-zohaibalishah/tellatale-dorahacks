@@ -1,156 +1,134 @@
 /**
- * First run.
+ * The splash — the first thing anyone sees.
  *
- * Three panels, then a decision. Someone arriving here has usually been handed a link
- * by a relative and has no idea what this is, and the single hardest thing this
- * product has to explain is that it is *not* another photo backup. Each panel makes
- * one claim and gets out of the way.
+ * Three faces, fanned, the middle one larger and lifted. It is doing one job: saying
+ * "people" before the word "photos" appears anywhere. This product is repeatedly
+ * mistaken for a photo backup, and a grid of pictures on the first screen would
+ * confirm the wrong guess in the half second before anybody reads a word.
  *
- * Shown once. Returning users go straight to sign-in — a value pitch in front of
- * someone who already bought is friction, not marketing.
+ * The dark button is the only one in the app. Crimson arrives on the tour, one screen
+ * later — spending the accent here would leave nothing to escalate to.
+ *
+ * Shown once. Returning users go straight to sign-in, because a pitch in front of
+ * someone who already bought is friction rather than marketing.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '../../src/components/Button';
 import { ActionBar, StepDots } from '../../src/components/chrome';
-import { Row, Screen } from '../../src/components/layout';
+import { Screen } from '../../src/components/layout';
 import { Text } from '../../src/components/Text';
+import { splashFaces } from '../../src/lib/onboarding-art';
 import { useTheme } from '../../src/state/theme';
-import { motion, radius, space } from '../../src/theme/tokens';
+import { radius, space } from '../../src/theme/tokens';
 
 export const WELCOME_SEEN_KEY = 'tellatale.welcome.seen';
 
-const PANELS = [
-  {
-    eyebrow: 'The problem',
-    title: 'The photos survive.\nThe stories don’t.',
-    body: 'A shoebox of prints had names on the back. A camera roll of forty thousand has nothing. When the person who knew who is in the picture is gone, the photo becomes a stranger.',
-  },
-  {
-    eyebrow: 'What this does',
-    title: 'Ask the people\nwho were there.',
-    body: 'Share one photo with a link or a QR code. Everyone who remembers it adds their side — no account, no app, under a minute.',
-  },
-  {
-    eyebrow: 'The part that matters',
-    title: 'Nobody’s words\nget overwritten.',
-    body: 'The story keeps every account attributed, and marks what is uncertain. Where memories disagree, it says so instead of picking a winner. You approve it before anyone sees it.',
-  },
-];
+/** Marked seen on the way out of onboarding, whichever exit is taken. */
+export async function markWelcomeSeen() {
+  await AsyncStorage.setItem(WELCOME_SEEN_KEY, '1');
+}
 
 export default function Welcome() {
   const router = useRouter();
   const { c } = useTheme();
-  const [index, setIndex] = useState(0);
-
-  const fade = useRef(new Animated.Value(1)).current;
-  const lift = useRef(new Animated.Value(0)).current;
-
-  // Cross-fade rather than a carousel swipe: three panels is a preamble, not a
-  // gallery, and a swipe affordance invites people to browse instead of continue.
-  useEffect(() => {
-    fade.setValue(0);
-    lift.setValue(8);
-    Animated.parallel([
-      Animated.timing(fade, {
-        toValue: 1,
-        duration: motion.standard,
-        useNativeDriver: true,
-      }),
-      Animated.timing(lift, {
-        toValue: 0,
-        duration: motion.standard,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [index, fade, lift]);
-
-  const panel = PANELS[index];
-  const last = index === PANELS.length - 1;
-
-  async function finish() {
-    await AsyncStorage.setItem(WELCOME_SEEN_KEY, '1');
-    router.replace('/(auth)/sign-up');
-  }
 
   return (
     <Screen
+      contentStyle={styles.content}
       footer={
         <ActionBar>
           <Button
-            label={last ? 'Create an account' : 'Next'}
-            variant="accent"
+            label="Get started"
+            variant="ink"
             full
-            onPress={() => (last ? finish() : setIndex((i) => i + 1))}
+            onPress={() => router.push('/(auth)/tour')}
           />
-          <Row gap={space.xs} style={styles.skipRow}>
-            <Button
-              label="I already have an account"
-              variant="ghost"
-              onPress={async () => {
-                await AsyncStorage.setItem(WELCOME_SEEN_KEY, '1');
-                router.replace('/(auth)/sign-in');
-              }}
-            />
-          </Row>
+          <Button
+            label="I already have an account"
+            variant="outline"
+            full
+            onPress={async () => {
+              await markWelcomeSeen();
+              router.replace('/(auth)/sign-in');
+            }}
+          />
+          <Text variant="meta" tone="muted" center style={styles.privacy}>
+            Private by default. We never share your family&apos;s memories without your
+            say-so.
+          </Text>
         </ActionBar>
       }
     >
-      <View style={styles.top}>
-        <Text variant="eyebrow" tone="muted">
+      <View style={styles.faces} accessibilityRole="image" accessibilityLabel="Three family portraits">
+        {splashFaces.map((source, i) => {
+          const middle = i === 1;
+          return (
+            <View
+              key={i}
+              style={[
+                styles.faceCard,
+                {
+                  width: middle ? 108 : 96,
+                  height: middle ? 200 : 170,
+                  marginTop: middle ? 0 : 26,
+                  borderColor: c.hairline,
+                  backgroundColor: c.surfaceRaised,
+                  // The outer two tuck behind the centre card rather than sitting in a
+                  // row — a row of three reads as a contact sheet, which is the
+                  // impression this screen exists to avoid.
+                  marginHorizontal: middle ? -10 : 0,
+                  zIndex: middle ? 2 : 1,
+                },
+              ]}
+            >
+              <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" />
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={styles.copy}>
+        <Text variant="eyebrow" tone="muted" center>
           TellaTale
         </Text>
+        <Text variant="display" center>
+          The whole family,{'\n'}remembering together
+        </Text>
+        <Text variant="body" tone="muted" center>
+          Collect the photos and the stories behind them — in one private place, before
+          they&apos;re lost.
+        </Text>
       </View>
 
-      {/* A quiet stand-in for the photograph the product is about. Deliberately not a
-          stock family photo: the brief bars depicting real people. */}
-      <View style={[styles.plate, { borderColor: c.hairline }]}>
-        <View style={[styles.plateInner, { backgroundColor: c.surfaceRaised }]} />
-        <View style={[styles.plateStamp, { backgroundColor: c.accent }]} />
-      </View>
-
-      <Animated.View
-        style={[styles.panel, { opacity: fade, transform: [{ translateY: lift }] }]}
-      >
-        <Text variant="eyebrow" tone="muted">
-          {panel.eyebrow}
-        </Text>
-        <Text variant="display">{panel.title}</Text>
-        <Text variant="body" tone="muted">
-          {panel.body}
-        </Text>
-      </Animated.View>
-
+      {/* Three dots for the three tour panels this leads into, so the length of what
+          is being started is visible before it starts. */}
       <View style={styles.dots}>
-        <StepDots total={PANELS.length} index={index} />
+        <StepDots total={3} index={0} />
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { paddingTop: space.xl },
-  plate: {
-    height: 150,
+  content: { justifyContent: 'center', gap: space.xl },
+  faces: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingTop: space.xxl,
+  },
+  faceCard: {
     borderRadius: radius.image,
     borderWidth: 1,
     overflow: 'hidden',
-    marginTop: space.lg,
-    justifyContent: 'flex-end',
   },
-  // RN 0.86 dropped `absoluteFillObject` from the StyleSheet types.
-  plateInner: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  plateStamp: {
-    width: 44,
-    height: 3,
-    margin: space.md,
-    borderRadius: 2,
-  },
-  panel: { gap: space.md, paddingTop: space.xl, minHeight: 260 },
-  dots: { alignItems: 'center', paddingTop: space.base },
-  skipRow: { justifyContent: 'center' },
+  copy: { gap: space.md, paddingHorizontal: space.sm },
+  dots: { alignItems: 'center' },
+  privacy: { paddingTop: space.xs },
 });

@@ -10,7 +10,7 @@
  * before they have done anything wrong.
  */
 
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -22,12 +22,12 @@ import { Row, Screen } from '../../src/components/layout';
 import { Text } from '../../src/components/Text';
 import { track } from '../../src/lib/analytics';
 import { useSession } from '../../src/state/auth';
+import { markSetupPending } from '../../src/state/onboarding';
 import { useTheme } from '../../src/state/theme';
 import { space } from '../../src/theme/tokens';
 import { validatePassword, validateUsername } from '../../src/lib/username';
 
 export default function SignUp() {
-  const router = useRouter();
   const { signUp } = useSession();
   const { c } = useTheme();
 
@@ -55,6 +55,9 @@ export default function SignUp() {
     setBusy(true);
     setError(null);
 
+    // Flagged before the session exists, so the route guard already knows where this
+    // account is going the moment it signs in.
+    await markSetupPending();
     const result = await signUp(username, password, displayName);
     setBusy(false);
 
@@ -63,7 +66,8 @@ export default function SignUp() {
       return;
     }
     track({ name: 'participant', role: 'owner' });
-    router.replace('/');
+    // No navigation here on purpose — the route guard in _layout owns it, and knows
+    // whether this account still owes us setup.
   }
 
   return (
