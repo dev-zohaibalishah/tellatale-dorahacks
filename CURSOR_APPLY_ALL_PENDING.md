@@ -1,6 +1,6 @@
 # Cursor prompt — apply every pending migration and rebuild
 
-Four migrations are now waiting, and a native rebuild is required for dictation.
+Five migrations are now waiting, and a native rebuild is required for dictation.
 Copy everything inside the fence into Cursor's chat (Agent mode, this repo open).
 
 ---
@@ -71,8 +71,11 @@ appeared to do nothing.
 ## Step 4 — The circles migration
 
   supabase/migrations/20260825090000_circles_requests_faces.sql
+  supabase/migrations/20260825120000_fix_circle_insert.sql
 
-Apply it with apply_migration, named "circles_requests_faces". It adds circles,
+Apply both, in that order, named "circles_requests_faces" and "fix_circle_insert".
+The second is required: without it, creating a circle fails with "new row violates
+row-level security policy". It adds circles,
 circle_members, memory_requests, face_names, a request_id column on memories, and the
 policies for all of them.
 
